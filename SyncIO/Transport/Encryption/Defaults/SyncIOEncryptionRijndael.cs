@@ -13,6 +13,12 @@ namespace SyncIO.Transport.Encryption.Defaults {
             Decryptor = RijObject.CreateDecryptor();
         }
 
+        public SyncIOEncryptionRijndael(Rijndael _RijObject) {
+            RijObject = _RijObject;
+            Encryptor = RijObject.CreateEncryptor();
+            Decryptor = RijObject.CreateDecryptor();
+        }
+
         public byte[] Decrypt(byte[] data) {
             return Decryptor.TransformFinalBlock(data, 0, data.Length);
         }

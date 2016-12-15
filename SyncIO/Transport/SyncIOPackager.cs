@@ -7,10 +7,10 @@ using System.IO;
 using System.Security.Cryptography;
 
 namespace SyncIO.Transport {
-    class SyncIOPackager{
+    internal class SyncIOPackager {
 
         private Serializer NSSerializer;
-        private RNGCryptoServiceProvider RND = new RNGCryptoServiceProvider();
+        private static RNGCryptoServiceProvider RND = new RNGCryptoServiceProvider();
 
         #region " Constructors "
         public SyncIOPackager(Type[] ManualTypes){
@@ -62,7 +62,7 @@ namespace SyncIO.Transport {
         /// </summary>
         /// <param name="size">Number of bytes rto return</param>
         /// <returns>Random byte array, size determined by size paramemer</returns>
-        public byte[] RandomBytes(int size) { //Used for some ISyncIOEncryption derived class initilizers
+        public static byte[] RandomBytes(int size) { //Used for some ISyncIOEncryption derived class initilizers
             var b = new byte[size];
             RND.GetNonZeroBytes(b);
             return b;
