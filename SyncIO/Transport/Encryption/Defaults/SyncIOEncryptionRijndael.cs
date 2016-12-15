@@ -5,7 +5,7 @@ namespace SyncIO.Transport.Encryption.Defaults {
         private Rijndael RijObject;
         private ICryptoTransform Encryptor;
         private ICryptoTransform Decryptor;
-        public SyncIOEncryptionRijndael(byte[] _key) {
+        public SyncIOEncryptionRijndael(byte[] _key)  {
             RijObject = new RijndaelManaged();
             RijObject.Key = _key;
             RijObject.IV = _key;

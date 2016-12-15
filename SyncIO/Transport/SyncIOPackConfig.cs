@@ -16,7 +16,6 @@ namespace SyncIO.Transport {
         /// <param name="size">Size of encryption key</param>
         /// <returns></returns>
         public static ISyncIOEncryption GenerateNewEncryption(SyncIOKeySize size) {
-            var rij = new RijndaelManaged();
             return new SyncIOEncryptionRijndael(SyncIOPackager.RandomBytes((int)size));
         }
 
