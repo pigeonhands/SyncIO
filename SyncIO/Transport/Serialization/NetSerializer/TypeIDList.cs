@@ -14,10 +14,10 @@ using System.Threading;
 
 namespace NetSerializer
 {
-    /// <summary>
-    /// Threadsafe TypeID -> TypeData list, which supports lockless reading.
-    /// </summary>
-    internal class TypeIDList
+	/// <summary>
+	/// Threadsafe TypeID -> TypeData list, which supports lockless reading.
+	/// </summary>
+	class TypeIDList
 	{
 		TypeData[] m_array;
 		object m_writeLock = new object();

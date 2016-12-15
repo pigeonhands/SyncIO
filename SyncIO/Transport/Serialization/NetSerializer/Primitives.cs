@@ -15,7 +15,7 @@ using System.Collections.Generic;
 
 namespace NetSerializer
 {
-    internal static class Primitives
+	public static class Primitives
 	{
 		public static MethodInfo GetWritePrimitive(Type type)
 		{

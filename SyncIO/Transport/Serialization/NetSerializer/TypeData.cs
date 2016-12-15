@@ -12,7 +12,7 @@ using System.Reflection.Emit;
 
 namespace NetSerializer
 {
-	internal class TypeData
+	sealed class TypeData
 	{
 		public TypeData(Type type, uint typeID, ITypeSerializer typeSerializer)
 		{

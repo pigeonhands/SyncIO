@@ -13,7 +13,7 @@ using System.Reflection.Emit;
 
 namespace NetSerializer
 {
-    internal interface ITypeSerializer
+	public interface ITypeSerializer
 	{
 		/// <summary>
 		/// Returns if this TypeSerializer handles the given type
@@ -26,7 +26,7 @@ namespace NetSerializer
 		IEnumerable<Type> GetSubtypes(Type type);
 	}
 
-    internal interface IStaticTypeSerializer : ITypeSerializer
+	public interface IStaticTypeSerializer : ITypeSerializer
 	{
 		/// <summary>
 		/// Get static method used to serialize the given type
@@ -39,7 +39,7 @@ namespace NetSerializer
 		MethodInfo GetStaticReader(Type type);
 	}
 
-	internal interface IDynamicTypeSerializer : ITypeSerializer
+	public interface IDynamicTypeSerializer : ITypeSerializer
 	{
 		/// <summary>
 		/// Generate code to serialize the given type
