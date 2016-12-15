@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO
+namespace SyncIO.Client
 {
-    public class Class1
+    class SyncIOClient
     {
     }
 }
