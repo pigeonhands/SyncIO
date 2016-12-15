@@ -17,7 +17,7 @@ namespace NetSerializer
 	/// <summary>
 	/// Threadsafe Type -> T dictionary, which supports lockless reading.
 	/// </summary>
-	class TypeDictionary
+	internal class TypeDictionary
 	{
 		struct Pair
 		{

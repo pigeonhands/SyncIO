@@ -11,7 +11,7 @@ using System.Collections.Generic;
 
 namespace NetSerializer
 {
-	public class Settings
+	internal class Settings
 	{
 		/// <summary>
 		/// Array of custom TypeSerializers

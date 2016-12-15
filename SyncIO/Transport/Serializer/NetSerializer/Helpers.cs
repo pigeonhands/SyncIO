@@ -17,7 +17,7 @@ using System.Text;
 
 namespace NetSerializer
 {
-	static class Helpers
+    internal static class Helpers
 	{
 		public static IEnumerable<FieldInfo> GetFieldInfos(Type type)
 		{

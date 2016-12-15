@@ -19,7 +19,7 @@ namespace NetSerializer
 	delegate void SerializeDelegate<T>(Serializer serializer, Stream stream, T ob);
 	delegate void DeserializeDelegate<T>(Serializer serializer, Stream stream, out T ob);
 
-	public class Serializer
+	internal class Serializer
 	{
 		readonly static ITypeSerializer[] s_typeSerializers = new ITypeSerializer[] {
 			new ObjectSerializer(),
