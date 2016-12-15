@@ -9,6 +9,7 @@ namespace SyncIO.Transport.Serialization
 {
     class SyncIOSeralizer
     {
+        private Serializer NSSerializer;
         public SyncIOSeralizer()
         {
             
