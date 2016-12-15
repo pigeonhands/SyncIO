@@ -1,20 +1,24 @@
 ﻿using NetSerializer;
 using SyncIO.Transport.Encryption;
 using SyncIO.Transport.Packets;
+using SyncIO.Transport.Packets.Internal;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 
 namespace SyncIO.Transport {
-    internal class SyncIOPackager {
+    internal class Packager {
 
         private Serializer NSSerializer;
         private static RNGCryptoServiceProvider RND = new RNGCryptoServiceProvider();
 
         #region " Constructors "
-        public SyncIOPackager(Type[] ManualTypes){
+        public Packager(Type[] ManualTypes){
             var AddTypes = new List<Type>(new Type[] { //For object[] sending, incase manual types do not contain these. 
+                    typeof(IdentifiedPacket),
+                    typeof(ObjectArrayPacket),
+
                     typeof(Guid),
                     typeof(Guid[]),
 
@@ -52,7 +56,7 @@ namespace SyncIO.Transport {
             }
             NSSerializer = new Serializer(AddTypes);
         }
-        public SyncIOPackager() : this(null) {
+        public Packager() : this(null) {
             //Used to only use the default types
         }
         #endregion
@@ -94,7 +98,7 @@ namespace SyncIO.Transport {
         /// <param name="p">Packet to pack</param>
         /// <param name="processing">Apply Post Packing (Encryption/Compression). Null to disable.</param>
         /// <returns>Packed data</returns>
-        public byte[] Pack(IPacket p, SyncIOPackConfig cfg) {
+        public byte[] Pack(IPacket p, PackConfig cfg) {
             using(var ms = new MemoryStream()) {
                 NSSerializer.Serialize(ms, p);
                 var data = ms.ToArray();
@@ -110,7 +114,7 @@ namespace SyncIO.Transport {
         /// <param name="data">Data to unpack</param>
         /// <param name="cfg">Apply Pre Unpacking (Decryption/Decompression). Null to disable.</param>
         /// <returns>Unpacked packet</returns>
-        public IPacket Unpack(byte[] data, SyncIOPackConfig cfg) {
+        public IPacket Unpack(byte[] data, PackConfig cfg) {
             if (cfg != null)
                 data = cfg.PreUnpacking(data);
 
@@ -118,6 +122,5 @@ namespace SyncIO.Transport {
                 return (IPacket)NSSerializer.Deserialize(ms);
         }
 
-        
     }
 }

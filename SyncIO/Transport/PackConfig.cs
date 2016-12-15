@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SyncIO.Transport {
-    internal class SyncIOPackConfig {
+    internal class PackConfig {
         public ISyncIOEncryption Encryption { get; set; }
         /// <summary>
         /// Generates a usable SyncIOEncryptionRijndael object
@@ -16,7 +16,7 @@ namespace SyncIO.Transport {
         /// <param name="size">Size of encryption key</param>
         /// <returns></returns>
         public static ISyncIOEncryption GenerateNewEncryption(SyncIOKeySize size) {
-            return new SyncIOEncryptionRijndael(SyncIOPackager.RandomBytes((int)size));
+            return new SyncIOEncryptionRijndael(Packager.RandomBytes((int)size));
         }
 
         /// <summary>
