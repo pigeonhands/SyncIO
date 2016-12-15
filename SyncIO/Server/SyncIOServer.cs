@@ -4,9 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO.Server
-{
-    class SyncIOServer
-    {
+namespace SyncIO.Server{
+    class SyncIOServer{
     }
 }

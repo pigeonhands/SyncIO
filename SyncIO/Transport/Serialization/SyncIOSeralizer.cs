@@ -5,13 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO.Transport.Serialization
-{
-    class SyncIOSeralizer
-    {
+namespace SyncIO.Transport.Serialization{
+    class SyncIOSeralizer{
         private Serializer NSSerializer;
-        public SyncIOSeralizer()
-        {
+        public SyncIOSeralizer(){
             
         }
     }
