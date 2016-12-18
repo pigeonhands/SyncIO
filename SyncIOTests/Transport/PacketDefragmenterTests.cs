@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -13,15 +14,15 @@ namespace SyncIOTests.Transport {
 
         [TestMethod]
         public void TestDefragmentation() {
-
+            var RNG = new RNGCryptoServiceProvider();
             for(int bsize = 4; bsize < 50; bsize++) { //Use diffrent buffer sizes
                 var pd = new PacketDefragmenter(bsize);
 
-                for (int i = 0; i < 1000; i++) {//checking that PacketDefragmenter works past the first packet
+                for (int i = 4; i < 100; i++) {//checking that PacketDefragmenter works past the first packet and with diffrent size data
                     byte[] receved = null;
-                    var data = "SyncIO packet defragmentation test";
-                    var strBytes = Encoding.UTF8.GetBytes(data);
-                    var packet = BitConverter.GetBytes(strBytes.Length).Concat(strBytes).ToArray();
+                    var data = new byte[i];
+                    RNG.GetNonZeroBytes(data);
+                    var packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();
 
                     using (var networkSimulator = new MemoryStream(packet)) {
 
@@ -29,8 +30,7 @@ namespace SyncIOTests.Transport {
                             receved = pd.Process(networkSimulator.Read(pd.ReceveBuffer, pd.BufferIndex, pd.BytesToReceve));
                         }
                     }
-                    var retStr = Encoding.UTF8.GetString(receved);
-                    Assert.AreEqual(retStr, data);
+                    CollectionAssert.AreEqual(data, receved);
                 }
             }
             
