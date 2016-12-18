@@ -40,6 +40,9 @@ namespace SyncIO.Server {
         /// </summary>
         private Queue<byte[]> SendQueue = new Queue<byte[]>();
 
+        /// <summary>
+        /// Used to handle receving of data.
+        /// </summary>
         private PacketDefragmenter Defragger;
 
         public InternalSyncIOConnectedClient(Socket s, Packager p, int bufferSize) {
@@ -53,7 +56,7 @@ namespace SyncIO.Server {
 
         public override void Send(params object[] arr) {
             byte[] data = Packager.PackArray(arr, PackagingConfiguration);
-            byte[] packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();
+            byte[] packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();//Appending length prefix to packet
             lock (SyncLock) {
                 SendQueue.Enqueue(packet);
                 Task.Factory.StartNew(HandleSendQueue);
@@ -68,7 +71,8 @@ namespace SyncIO.Server {
                 packet = SendQueue.Dequeue();
             }
 
-            NetworkSocket.Send(packet);
+            if(packet != null)
+                NetworkSocket.Send(packet);
         }
 
     }
