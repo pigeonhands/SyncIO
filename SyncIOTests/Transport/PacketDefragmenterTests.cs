@@ -18,7 +18,7 @@ namespace SyncIOTests.Transport {
             for(int bsize = 4; bsize < 50; bsize++) { //Use diffrent buffer sizes
                 var pd = new PacketDefragmenter(bsize);
 
-                for (int i = 4; i < 100; i++) {//checking that PacketDefragmenter works past the first packet and with diffrent size data
+                for (int i = 0; i < 150; i++) {//checking that PacketDefragmenter works past the first packet and with diffrent size data
                     byte[] receved = null;
                     var data = new byte[i];
                     RNG.GetNonZeroBytes(data);
