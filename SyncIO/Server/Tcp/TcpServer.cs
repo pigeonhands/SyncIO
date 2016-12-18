@@ -39,8 +39,7 @@ namespace SyncIO.Server.Tcp {
             try {
                 NetworkSocket.Connect(host, port);
                 SuccessfulConnection = true;
-            }
-            catch {
+            } catch {
                 SuccessfulConnection = false;
             }
             return SuccessfulConnection;
@@ -50,8 +49,7 @@ namespace SyncIO.Server.Tcp {
             CreateNewSocket();
             try {
                 SuccessfulConnection = true;
-            }
-            catch {
+            }catch {
                 SuccessfulConnection = false;
             }
             return SuccessfulConnection;

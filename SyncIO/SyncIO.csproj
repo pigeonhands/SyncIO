@@ -43,9 +43,11 @@
   <ItemGroup>
     <Compile Include="Client\SyncIOClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server\SyncIOConnectedClient.cs" />
     <Compile Include="Server\SyncIOServer.cs" />
     <Compile Include="Server\Tcp\TcpServer.cs" />
     <Compile Include="Transport\Encryption\Defaults\SyncIOEncryptionRSA.cs" />
+    <Compile Include="Transport\PacketDefragmenter.cs" />
     <Compile Include="Transport\Packets\Internal\IdentifiedPacket.cs" />
     <Compile Include="Transport\Packets\Internal\ObjectArrayPacket.cs" />
     <Compile Include="Transport\Packets\IPacket.cs" />

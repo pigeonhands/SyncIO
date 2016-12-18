@@ -8,7 +8,7 @@ using System.IO;
 using System.Security.Cryptography;
 
 namespace SyncIO.Transport {
-    internal class Packager {
+    public class Packager {
 
         private Serializer NSSerializer;
         private static RNGCryptoServiceProvider RND = new RNGCryptoServiceProvider();
@@ -98,9 +98,19 @@ namespace SyncIO.Transport {
         /// <param name="p">Packet to pack</param>
         /// <param name="processing">Apply Post Packing (Encryption/Compression). Null to disable.</param>
         /// <returns>Packed data</returns>
-        public byte[] Pack(IPacket p, PackConfig cfg) {
+        internal byte[] Pack(IPacket p, PackConfig cfg) {
             using(var ms = new MemoryStream()) {
                 NSSerializer.Serialize(ms, p);
+                var data = ms.ToArray();
+                if (cfg != null)
+                    data = cfg.PostPacking(data);
+                return data;
+            }
+        }
+
+        internal byte[] Pack(Guid ID, IPacket p, PackConfig cfg) {
+            using (var ms = new MemoryStream()) {
+                NSSerializer.SerializeDirect<IdentifiedPacket>(ms, new IdentifiedPacket(ID, p));
                 var data = ms.ToArray();
                 if (cfg != null)
                     data = cfg.PostPacking(data);
@@ -114,7 +124,7 @@ namespace SyncIO.Transport {
         /// <param name="data">Data to unpack</param>
         /// <param name="cfg">Apply Pre Unpacking (Decryption/Decompression). Null to disable.</param>
         /// <returns>Unpacked packet</returns>
-        public IPacket Unpack(byte[] data, PackConfig cfg) {
+        internal IPacket Unpack(byte[] data, PackConfig cfg) {
             if (cfg != null)
                 data = cfg.PreUnpacking(data);
 
@@ -122,5 +132,8 @@ namespace SyncIO.Transport {
                 return (IPacket)NSSerializer.Deserialize(ms);
         }
 
+        internal byte[] PackArray(object[] arr, PackConfig cfg) {
+            return Pack(new ObjectArrayPacket(arr), cfg);
+        }
     }
 }
