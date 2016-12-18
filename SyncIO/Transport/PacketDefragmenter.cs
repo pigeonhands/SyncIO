@@ -16,15 +16,10 @@ namespace SyncIO.Transport {
         /// <summary>
         /// Number of bytes to receve
         /// </summary>
-        public int BytesToReceve => CalculateBytesToReceve();
-
-        /// <summary>
-        /// Index to start ReceveBuffer write
-        /// </summary>
-        public int BufferIndex => PacketSizeCounter;
+        public int BytesToReceve => CalculateBytesToReceve(); //Naughty, i know.
 
         private int CalculateBytesToReceve() {
-            if(ReceveStream == null) {
+            if (ReceveStream == null) {
                 //Reading a packet header
                 var read = 4 - PacketSizeCounter;
                 if (read < 1)
@@ -36,12 +31,19 @@ namespace SyncIO.Transport {
             if (neededBytes < 0)
                 throw new IndexOutOfRangeException("Need negative ammount of bytes to complete packet.");
 
-            if(neededBytes > ReceveBuffer.Length) {
+            if (neededBytes > ReceveBuffer.Length) {
                 return ReceveBuffer.Length; //Need more than the curret buffer can handle, so just use the whole buffer.
-            }else {
+            } else {
                 return (int)neededBytes;    //Only need a protan of the current buffer to complete packet
             }
         }
+
+        /// <summary>
+        /// Index to start ReceveBuffer write
+        /// </summary>
+        public int BufferIndex => PacketSizeCounter;
+
+       
 
         /// <summary>
         /// MemryStream for joining fragmented packet.
