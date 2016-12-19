@@ -99,6 +99,7 @@ namespace SyncIO.Transport {
                 if (ReceveStream.Position == CurrentPacketSize) {
                     //Finished receving packet
                     byte[] packet = ReceveStream.ToArray();
+                    ReceveStream.Dispose();
                     ReceveStream = null;
                     return packet;
                 }else {

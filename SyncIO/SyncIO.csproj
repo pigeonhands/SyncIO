@@ -43,9 +43,10 @@
   <ItemGroup>
     <Compile Include="Client\SyncIOClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Server\SyncIOSocket.cs" />
     <Compile Include="Server\SyncIOConnectedClient.cs" />
     <Compile Include="Server\SyncIOServer.cs" />
-    <Compile Include="Server\Tcp\TcpServer.cs" />
+    <Compile Include="Network\TcpSocket.cs" />
     <Compile Include="Transport\Encryption\Defaults\SyncIOEncryptionRSA.cs" />
     <Compile Include="Transport\PacketDefragmenter.cs" />
     <Compile Include="Transport\Packets\Internal\IdentifiedPacket.cs" />
@@ -73,11 +74,7 @@
     <Compile Include="Transport\PackConfig.cs" />
     <Compile Include="Transport\TransportProtocal.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Client\Tcp\" />
-    <Folder Include="Client\Udp\" />
-    <Folder Include="Server\Udp\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

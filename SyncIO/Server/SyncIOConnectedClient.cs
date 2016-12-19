@@ -63,6 +63,10 @@ namespace SyncIO.Server {
             }
         }
 
+        public void Receve() {
+            throw new NotImplementedException();
+        }
+
 
         private void HandleSendQueue() {
             byte[] packet = null;
