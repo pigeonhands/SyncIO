@@ -30,6 +30,9 @@ namespace SyncIO.Server {
         public virtual void Send(params object[] data) {
         }
 
+        public virtual void Send(IPacket packet) {
+        }
+
         protected void Disconnect() {
             if(NetworkSocket != null) {
                 NetworkSocket.Shutdown(SocketShutdown.Both);
@@ -38,6 +41,8 @@ namespace SyncIO.Server {
             }
             OnDisconnect?.Invoke(this);
         }
+
+        
     }
 
     /// <summary>
