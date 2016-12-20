@@ -12,18 +12,18 @@ namespace SyncIO.Network.Callbacks {
     /// <summary>
     /// Threadsafe callback handler.
     /// </summary>
-    internal class CallbackManager {
+    internal class CallbackManager<ClientType> where ClientType : ISyncIOClient {
 
-        private Action<ISyncIOClient, object[]> ArrayHandler;
-        private Action<ISyncIOClient, IPacket> GenericHandler;
-        private Dictionary<Type, PacketCallback<ISyncIOClient>> PacketCallbacks = new Dictionary<Type, PacketCallback<ISyncIOClient>>();
+        private Action<ClientType, object[]> ArrayHandler;
+        private Action<ClientType, IPacket> GenericHandler;
+        private Dictionary<Type, PacketCallback<ClientType>> PacketCallbacks = new Dictionary<Type, PacketCallback<ClientType>>();
         private object CallbackLock = new object();
 
         /// <summary>
         /// Add handler for raw object array receve
         /// </summary>
         /// <param name="callback"></param>
-        public void AddArrayHandler(Action<ISyncIOClient, object[]> callback) {
+        public void AddArrayHandler(Action<ClientType, object[]> callback) {
             lock (CallbackLock) {
                 ArrayHandler = callback;
             }
@@ -34,8 +34,8 @@ namespace SyncIO.Network.Callbacks {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
-        public void AddHandler<T>(Action<ISyncIOClient, T> callback) where T : class, IPacket {
-            var cb = PacketCallback<ISyncIOClient>.Create<ISyncIOClient, T>(callback);
+        public void AddHandler<T>(Action<ClientType, T> callback) where T : class, IPacket {
+            var cb = PacketCallback<ClientType>.Create<ClientType, T>(callback);
             lock (CallbackLock) {
                 if (PacketCallbacks.ContainsKey(cb.Type))
                     PacketCallbacks[cb.Type] = cb;
@@ -49,14 +49,14 @@ namespace SyncIO.Network.Callbacks {
         /// If another handler is raised for the type of IPacket, this callback will not be called for it.
         /// </summary>
         /// <param name="callback"></param>
-        public void AddPacketHandler(Action<ISyncIOClient, IPacket> callback) {
+        public void AddPacketHandler(Action<ClientType, IPacket> callback) {
             lock (CallbackLock) {
                 GenericHandler = callback;
             }
         }
 
-        private bool RaisePacketHandler(Type packetType, ISyncIOClient client, IPacket data) {
-            PacketCallback<ISyncIOClient> callback = null;
+        private bool RaisePacketHandler(Type packetType, ClientType client, IPacket data) {
+            PacketCallback<ClientType> callback = null;
             lock (CallbackLock) {
                 if (PacketCallbacks.ContainsKey(packetType))
                     callback = PacketCallbacks[packetType];
@@ -69,7 +69,7 @@ namespace SyncIO.Network.Callbacks {
             }
         }
 
-        public void Handle(ISyncIOClient client, IPacket data) {
+        public void Handle(ClientType client, IPacket data) {
             Type packetType = data.GetType();
 
             if (packetType == typeof(ObjectArrayPacket)) {

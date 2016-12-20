@@ -19,7 +19,7 @@ namespace SyncIO.Server{
         public TransportProtocal Protocal { get; }
 
         private Packager Packager;
-        private CallbackManager Callbacks;
+        private CallbackManager<SyncIOConnectedClient> Callbacks;
 
 
         public SyncIOServer(TransportProtocal _protocal, Packager _packager) {
@@ -60,7 +60,7 @@ namespace SyncIO.Server{
         /// Add handler for raw object array receve
         /// </summary>
         /// <param name="callback"></param>
-        public void AddHandler(Action<ISyncIOClient, object[]> callback) {
+        public void AddHandler(Action<SyncIOConnectedClient, object[]> callback) {
             Callbacks.AddArrayHandler(callback);
         }
 
@@ -69,7 +69,7 @@ namespace SyncIO.Server{
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
-        public void AddHandler<T>(Action<ISyncIOClient, T> callback) where T : class, IPacket {
+        public void AddHandler<T>(Action<SyncIOConnectedClient, T> callback) where T : class, IPacket {
             Callbacks.AddHandler<T>(callback);
         }
 
@@ -78,7 +78,7 @@ namespace SyncIO.Server{
         /// If another handler is raised for the type of IPacket, this callback will not be called for it.
         /// </summary>
         /// <param name="callback"></param>
-        public void AddHandler(Action<ISyncIOClient, IPacket> callback) {
+        public void AddHandler(Action<SyncIOConnectedClient, IPacket> callback) {
             Callbacks.AddPacketHandler(callback);
         }
 
