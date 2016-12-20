@@ -14,25 +14,7 @@ namespace SyncIOTests.Network {
     [TestClass]
     public class CallbackManagerTests {
 
-        public class testClient : ISyncIOClient {
-            public void Send(IPacket packet) {
-            }
-
-            public void Send(params object[] data) {
-            }
-        }
-
-        public class Test1 : IPacket {
-            public int Data { get; set; }
-            public Test1(int _d) {
-                Data = _d;
-            }
-        }
-
-        public class Test2 : IPacket {
-        }
-        public class Test3 : IPacket {
-        }
+        
 
         [TestMethod]
         public void TestCallbacks() {
@@ -80,5 +62,26 @@ namespace SyncIOTests.Network {
             callbacks.Handle(Client2, new Test3());
         }
 
+        public class testClient : ISyncIOClient {
+            public void Send(IPacket packet) {
+            }
+
+            public void Send(params object[] data) {
+            }
+        }
+
+        public class Test1 : IPacket {
+            public int Data { get; set; }
+            public Test1(int _d) {
+                Data = _d;
+            }
+        }
+
+        public class Test2 : IPacket {
+        }
+        public class Test3 : IPacket {
+        }
+
     }
+
 }

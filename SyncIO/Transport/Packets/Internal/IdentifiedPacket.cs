@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SyncIO.Transport.Packets.Internal {
+    [Serializable]
     internal class IdentifiedPacket { //Primaraly for UDP
         public Guid ID { get; set; }
         public IPacket Packet { get; set; }
