@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace SyncIO.Network.Callbacks {
     internal class PacketCallback<SenderType>  {
 
-        public static PacketCallback<SenderTypeCreate> Create<SenderTypeCreate, T>(Action<SenderTypeCreate, T> handler) 
+        public static PacketCallback<SenderType> Create<T>(Action<SenderType, T> handler) 
             where T : class, IPacket {
-            return new InnerPacketCallback<SenderTypeCreate, T>(handler);
+            return new InnerPacketCallback<SenderType, T>(handler);
         }
 
         public virtual void Raise(SenderType t, IPacket packet) {

@@ -35,7 +35,7 @@ namespace SyncIO.Network.Callbacks {
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
         public void AddHandler<T>(Action<ClientType, T> callback) where T : class, IPacket {
-            var cb = PacketCallback<ClientType>.Create<ClientType, T>(callback);
+            var cb = PacketCallback<ClientType>.Create<T>(callback);
             lock (CallbackLock) {
                 if (PacketCallbacks.ContainsKey(cb.Type))
                     PacketCallbacks[cb.Type] = cb;
