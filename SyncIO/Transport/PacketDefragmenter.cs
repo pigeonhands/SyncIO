@@ -11,7 +11,7 @@ namespace SyncIO.Transport {
     /// Reconstructs a packet with the format:
     /// [4 byte data length header] [Data length specified by header]
     /// </summary>
-    public class PacketDefragmenter {
+    internal class PacketDefragmenter {
 
         /// <summary>
         /// Number of bytes to receve

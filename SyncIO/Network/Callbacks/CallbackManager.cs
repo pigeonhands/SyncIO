@@ -23,7 +23,7 @@ namespace SyncIO.Network.Callbacks {
         /// Add handler for raw object array receve
         /// </summary>
         /// <param name="callback"></param>
-        public void AddArrayHandler(Action<ClientType, object[]> callback) {
+        public void SetArrayHandler(Action<ClientType, object[]> callback) {
             lock (CallbackLock) {
                 ArrayHandler = callback;
             }
@@ -34,7 +34,7 @@ namespace SyncIO.Network.Callbacks {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
-        public void AddHandler<T>(Action<ClientType, T> callback) where T : class, IPacket {
+        public void SetHandler<T>(Action<ClientType, T> callback) where T : class, IPacket {
             var cb = PacketCallback<ClientType>.Create<T>(callback);
             lock (CallbackLock) {
                 if (PacketCallbacks.ContainsKey(cb.Type))
@@ -49,7 +49,7 @@ namespace SyncIO.Network.Callbacks {
         /// If another handler is raised for the type of IPacket, this callback will not be called for it.
         /// </summary>
         /// <param name="callback"></param>
-        public void AddPacketHandler(Action<ClientType, IPacket> callback) {
+        public void SetPacketHandler(Action<ClientType, IPacket> callback) {
             lock (CallbackLock) {
                 GenericHandler = callback;
             }
