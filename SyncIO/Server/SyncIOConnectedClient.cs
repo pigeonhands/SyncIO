@@ -1,4 +1,5 @@
-﻿using SyncIO.Transport;
+﻿using SyncIO.Network;
+using SyncIO.Transport;
 using SyncIO.Transport.Packets;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace SyncIO.Server {
     /// A client that is connected to a SyncIOServer
     /// Used from receving/sending from the SyncIOServer.
     /// </summary>
-    public abstract class SyncIOConnectedClient {
+    public abstract class SyncIOConnectedClient : ISyncIOClient {
         public event OnClientDisconnectDelegate OnDisconnect;
         /// <summary>
         /// Id of connected client.

@@ -15,8 +15,10 @@ namespace SyncIO.Server.Network {
     /// Internal socket used for both client and server.
     /// </summary>
     internal class TcpSocket : SyncIOSocket {
+
         public event OnTCPSocketException OnException;
         public event Action<TcpSocket, Socket> OnClientConnect;
+
         public TransportProtocal Protocal { get; }
         public bool Binded => (NetworkSocket?.Connected ?? false) && SuccessfulBind;
        

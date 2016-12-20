@@ -1,4 +1,6 @@
-﻿using SyncIO.Server.Network;
+﻿using SyncIO.Network;
+using SyncIO.Network.Callbacks;
+using SyncIO.Server.Network;
 using SyncIO.Transport;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
@@ -17,12 +19,8 @@ namespace SyncIO.Server{
         public TransportProtocal Protocal { get; }
 
         private Packager Packager;
+        private CallbackManager Callbacks;
 
-
-        private Action<SyncIOConnectedClient, object[]> ArrayHandler;
-        private Action<SyncIOConnectedClient, IPacket> GenericHandler;
-        private Dictionary<Type, PacketCallback<InternalSyncIOConnectedClient>> PacketCallbacks = new Dictionary<Type, PacketCallback<InternalSyncIOConnectedClient>>();
-        private object CallbackLock = new object();
 
         public SyncIOServer(TransportProtocal _protocal, Packager _packager) {
             Protocal = _protocal;
@@ -51,40 +49,19 @@ namespace SyncIO.Server{
             OnClientConnect?.Invoke(this, client);
         }
 
-        private bool RaisePacketHandler(Type packetType, InternalSyncIOConnectedClient client, IPacket data) {
-            PacketCallback<InternalSyncIOConnectedClient> callback = null;
-            lock (CallbackLock) {
-                if (PacketCallbacks.ContainsKey(packetType))
-                    callback = PacketCallbacks[packetType];
-            }
-            if (callback == null) {
-                return false;
-            } else {
-                callback?.Raise(client, data);
-                return true;
-            }
-        }
+        
 
         private void ReceveHandler(InternalSyncIOConnectedClient client, IPacket data) {
-          
-            Type packetType = data.GetType();
-
-            if(packetType == typeof(ObjectArrayPacket)) {
-                ArrayHandler?.Invoke(client, ((ObjectArrayPacket)data).Data);
-            }else {
-                if (!RaisePacketHandler(packetType, client, data))
-                    GenericHandler?.Invoke(client, data);
-            }
+            Callbacks.Handle(client, data);
         }
+
 
         /// <summary>
         /// Add handler for raw object array receve
         /// </summary>
         /// <param name="callback"></param>
-        public void AddHandler(Action<SyncIOConnectedClient, object[]> callback) {
-            lock (CallbackLock) {
-                ArrayHandler = callback;
-            }
+        public void AddHandler(Action<ISyncIOClient, object[]> callback) {
+            Callbacks.AddArrayHandler(callback);
         }
 
         /// <summary>
@@ -92,14 +69,8 @@ namespace SyncIO.Server{
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
-        public void AddHandler<T>(Action<SyncIOConnectedClient, T> callback) where T :class, IPacket {
-            var cb = PacketCallback<SyncIOConnectedClient>.Create<InternalSyncIOConnectedClient, T>(callback);
-            lock (CallbackLock) {
-                if (PacketCallbacks.ContainsKey(cb.Type))
-                    PacketCallbacks[cb.Type] = cb;
-                else
-                    PacketCallbacks.Add(cb.Type, cb);
-            }
+        public void AddHandler<T>(Action<ISyncIOClient, T> callback) where T : class, IPacket {
+            Callbacks.AddHandler<T>(callback);
         }
 
         /// <summary>
@@ -107,10 +78,8 @@ namespace SyncIO.Server{
         /// If another handler is raised for the type of IPacket, this callback will not be called for it.
         /// </summary>
         /// <param name="callback"></param>
-        public void AddHandler(Action<SyncIOConnectedClient, IPacket> callback) {
-            lock (CallbackLock) {
-                GenericHandler = callback;
-            }
+        public void AddHandler(Action<ISyncIOClient, IPacket> callback) {
+            Callbacks.AddPacketHandler(callback);
         }
 
     }

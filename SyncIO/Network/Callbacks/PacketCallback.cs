@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO.Server {
+namespace SyncIO.Network.Callbacks {
     internal class PacketCallback<SenderType>  {
 
         public static PacketCallback<SenderTypeCreate> Create<SenderTypeCreate, T>(Action<SenderTypeCreate, T> handler) 

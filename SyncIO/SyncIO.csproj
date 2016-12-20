@@ -42,8 +42,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\SyncIOClient.cs" />
+    <Compile Include="Network\Callbacks\CallbackManager.cs" />
+    <Compile Include="Network\ISyncIOClient.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Server\PacketCallback.cs" />
+    <Compile Include="Network\Callbacks\PacketCallback.cs" />
     <Compile Include="Server\SyncIOSocket.cs" />
     <Compile Include="Server\SyncIOConnectedClient.cs" />
     <Compile Include="Server\SyncIOServer.cs" />
