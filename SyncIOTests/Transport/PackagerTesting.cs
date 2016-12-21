@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#if(DEBUG)
 namespace SyncIOTests.Transport {
     [TestClass]
     public class PackagerTesting {
@@ -62,3 +63,4 @@ namespace SyncIOTests.Transport {
 
     }
 }
+#endif

@@ -10,11 +10,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+#if(DEBUG)
 namespace SyncIOTests.Network {
     [TestClass]
     public class CallbackManagerTests {
-
-        
 
         [TestMethod]
         public void TestCallbacks() {
@@ -85,3 +84,4 @@ namespace SyncIOTests.Network {
     }
 
 }
+#endif

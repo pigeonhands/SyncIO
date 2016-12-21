@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
+#if(DEBUG)
 namespace SyncIOTests.Transport {
     [TestClass]
     public class PacketDefragmenterTests {
@@ -37,3 +38,4 @@ namespace SyncIOTests.Transport {
         }
     }
 }
+#endif
