@@ -87,6 +87,11 @@ namespace SyncIO.Server {
             HandleRawBytes(data);
         }
 
+        public override void Send(IPacket packet) {
+            byte[] data = Packager.Pack(packet);
+            HandleRawBytes(data);
+        }
+
         /// <summary>
         /// Assigns a prefix to the data and adds ti to the send queue.
         /// </summary>
