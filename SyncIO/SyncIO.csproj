@@ -42,7 +42,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Assembly.cs" />
     <Compile Include="Client\SyncIOClient.cs" />
     <Compile Include="Network\Callbacks\CallbackManager.cs" />
     <Compile Include="Network\Callbacks\QueuedPacket.cs" />
