@@ -2,6 +2,7 @@
 using SyncIO.Network.Callbacks;
 using SyncIO.Transport;
 using SyncIO.Transport.Packets;
+using SyncIO.Transport.Packets.Internal;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -28,15 +29,15 @@ namespace SyncIO.Network {
         /// Underlying socket connection for the client
         /// </summary>
         protected Socket NetworkSocket { get; set; }
-        public void Send(object[] data) {
+        public void Send(params object[] data) {
             Send(null, data);
         }
 
         public void Send(IPacket packet) {
             Send(null, packet);
-        }
+        } 
 
-        public virtual void Send(Action<SyncIOConnectedClient> afterSend, object[] data) {
+        public virtual void Send(Action<SyncIOConnectedClient> afterSend, params object[] data) {
         }
 
         public virtual void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
@@ -80,7 +81,7 @@ namespace SyncIO.Network {
         private Action<InternalSyncIOConnectedClient, IPacket> ReceveCallback;
 
         public InternalSyncIOConnectedClient(Socket s, Packager p, int bufferSize) {
-            if(s == null)
+           if (s == null)
                 throw new Exception("Socket not valid.");
 
             NetworkSocket = s;

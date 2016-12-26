@@ -52,7 +52,7 @@ namespace SyncIOTests {
                 Console.WriteLine("Connected.");
                 cID = c.ID;
                 c.OnDisconnect += (rtcl, err) => {
-                    throw err;
+                    throw new AssertFailedException(err.Message, err);
                 };
             };
 
@@ -61,12 +61,12 @@ namespace SyncIOTests {
                 s.Send(cPayload);
             });
 
-            Assert.IsNotNull(server.ListenTCP(1234));
+            Assert.IsNotNull(server.ListenTCP(9000));
 
             var client = new SyncIOClient(TransportProtocal.IPv4, packer);
 
             client.OnDisconnect += (sCl, err) => {
-                throw err;
+                throw new AssertFailedException(err.Message, err);
             };
 
             client.SetHandler<CustomDataSending>((s, d) => {
@@ -83,11 +83,10 @@ namespace SyncIOTests {
                 s.Send(arrPayload);
             };
 
-            Assert.IsTrue(client.Connect("127.0.0.1", 1234));
+            Assert.IsTrue(client.Connect("127.0.0.1", 9000));
            
 
             Assert.IsTrue(done.WaitOne(10 * 1000));
         }
-
     }
 }
