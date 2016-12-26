@@ -28,10 +28,18 @@ namespace SyncIO.Network {
         /// Underlying socket connection for the client
         /// </summary>
         protected Socket NetworkSocket { get; set; }
-        public virtual void Send(params object[] data) {
+        public void Send(object[] data) {
+            Send(null, data);
         }
 
-        public virtual void Send(IPacket packet) {
+        public void Send(IPacket packet) {
+            Send(null, packet);
+        }
+
+        public virtual void Send(Action<SyncIOConnectedClient> afterSend, object[] data) {
+        }
+
+        public virtual void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
         }
 
         protected void Disconnect(Exception ex) {
@@ -84,17 +92,12 @@ namespace SyncIO.Network {
         }
 
 
-        public override void Send(object[] arr) {
+        public override void Send(Action<SyncIOConnectedClient> afterSend, object[] arr) {
             byte[] data = Packager.PackArray(arr, PackagingConfiguration);
-            HandleRawBytes(data);
+            HandleRawBytes(data, afterSend);
         }
 
-        public override void Send(IPacket packet) {
-            byte[] data = Packager.Pack(packet);
-            HandleRawBytes(data);
-        }
-
-        internal void Send(IPacket packet, Action<InternalSyncIOConnectedClient> afterSend) {
+        public override void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
             byte[] data = Packager.Pack(packet);
             HandleRawBytes(data, afterSend);
         }
@@ -103,7 +106,7 @@ namespace SyncIO.Network {
         /// Assigns a prefix to the data and adds ti to the send queue.
         /// </summary>
         /// <param name="data">Data to send</param>
-        private void HandleRawBytes(byte[] data, Action<InternalSyncIOConnectedClient> afterSend = null) {
+        private void HandleRawBytes(byte[] data, Action<SyncIOConnectedClient> afterSend) {
             byte[] packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();//Appending length prefix to packet
             lock (SyncLock) {
                 SendQueue.Enqueue(new QueuedPacket(packet, afterSend));

@@ -49,9 +49,9 @@ namespace SyncIO.Server{
             var client = new InternalSyncIOConnectedClient(s, Packager);
             client.SetID(GuidGenerator());
             client.BeginReceve(ReceveHandler);
-            client.Send(new HandshakePacket(true, client.ID), (cl) => {
+            client.Send((cl) => {
                 OnClientConnect?.Invoke(this, cl);//Trigger event after handshake packet has been sent.
-            });
+            }, new HandshakePacket(true, client.ID));
         }
 
         private void ReceveHandler(InternalSyncIOConnectedClient client, IPacket data) {

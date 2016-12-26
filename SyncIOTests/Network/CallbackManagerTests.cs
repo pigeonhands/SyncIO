@@ -67,6 +67,12 @@ namespace SyncIOTests.Network {
 
             public void Send(params object[] data) {
             }
+
+            public void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
+            }
+
+            public void Send(Action<SyncIOConnectedClient> afterSend, params object[] data) {
+            }
         }
 
         public class Test1 : IPacket {

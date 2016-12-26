@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 namespace SyncIO.Network.Callbacks {
     internal class QueuedPacket {
         public byte[] Data { get; }
-        private Action<InternalSyncIOConnectedClient> AfterSend;
-        public QueuedPacket(byte[] _data, Action<InternalSyncIOConnectedClient> _after) {
+        private Action<SyncIOConnectedClient> AfterSend;
+        public QueuedPacket(byte[] _data, Action<SyncIOConnectedClient> _after) {
             Data = _data;
             AfterSend = _after;
         }
@@ -16,7 +16,7 @@ namespace SyncIO.Network.Callbacks {
         public QueuedPacket(byte[] _data) : this(_data, null) {
         }
 
-        public void HasBeenSent(InternalSyncIOConnectedClient sender) {
+        public void HasBeenSent(SyncIOConnectedClient sender) {
             AfterSend?.Invoke(sender);
         }
     }

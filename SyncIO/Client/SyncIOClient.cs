@@ -119,16 +119,24 @@ namespace SyncIO.Client {
             Callbacks.SetPacketHandler(callback);
         }
 
-        public void Send(params object[] data) {
+        public void Send(Action<SyncIOConnectedClient> afterSend, params object[] data) {
             if (Connected) {
-                Connection.Send(data);
+                Connection.Send(afterSend, data);
             }
         }
 
-        public void Send(IPacket packet) {
+        public void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
             if (Connected) {
-                Connection.Send(packet);
+                Connection.Send(afterSend, packet);
             }
+        }
+
+        public void Send(params object[] data) {
+            Send(null, data);
+        }
+
+        public void Send(IPacket packet) {
+            Send(null, packet);
         }
     }
 
