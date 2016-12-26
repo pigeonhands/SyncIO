@@ -1,4 +1,5 @@
 ﻿using SyncIO.Network;
+using SyncIO.Network.Callbacks;
 using SyncIO.Transport;
 using SyncIO.Transport.Packets;
 using System;
@@ -9,7 +10,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO.Server {
+namespace SyncIO.Network {
     public delegate void OnClientDisconnectDelegate(SyncIOConnectedClient client);
 
     /// <summary>
@@ -41,8 +42,6 @@ namespace SyncIO.Server {
             }
             OnDisconnect?.Invoke(this);
         }
-
-        
     }
 
     /// <summary>
@@ -62,7 +61,7 @@ namespace SyncIO.Server {
         /// <summary>
         /// Send queue for client
         /// </summary>
-        private Queue<byte[]> SendQueue = new Queue<byte[]>();
+        private Queue<QueuedPacket> SendQueue = new Queue<QueuedPacket>();
 
         /// <summary>
         /// Used to handle receving of data.
@@ -73,6 +72,9 @@ namespace SyncIO.Server {
         private Action<InternalSyncIOConnectedClient, IPacket> ReceveCallback;
 
         public InternalSyncIOConnectedClient(Socket s, Packager p, int bufferSize) {
+            if(s == null)
+                throw new Exception("Socket not valid.");
+
             NetworkSocket = s;
             Packager = p;
             Defragger = new PacketDefragmenter(bufferSize);
@@ -82,7 +84,7 @@ namespace SyncIO.Server {
         }
 
 
-        public override void Send(params object[] arr) {
+        public override void Send(object[] arr) {
             byte[] data = Packager.PackArray(arr, PackagingConfiguration);
             HandleRawBytes(data);
         }
@@ -92,41 +94,54 @@ namespace SyncIO.Server {
             HandleRawBytes(data);
         }
 
+        internal void Send(IPacket packet, Action<InternalSyncIOConnectedClient> afterSend) {
+            byte[] data = Packager.Pack(packet);
+            HandleRawBytes(data, afterSend);
+        }
+
         /// <summary>
         /// Assigns a prefix to the data and adds ti to the send queue.
         /// </summary>
         /// <param name="data">Data to send</param>
-        private void HandleRawBytes(byte[] data) {
+        private void HandleRawBytes(byte[] data, Action<InternalSyncIOConnectedClient> afterSend = null) {
             byte[] packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();//Appending length prefix to packet
             lock (SyncLock) {
-                SendQueue.Enqueue(packet);
+                SendQueue.Enqueue(new QueuedPacket(packet, afterSend));
                 Task.Factory.StartNew(HandleSendQueue);
             }
         }
 
         private void HandleSendQueue() {
-            byte[] packet = null;
+            QueuedPacket packet = null;
 
             lock (SyncLock) {
                 packet = SendQueue.Dequeue();
             }
 
-            if(packet != null)
-                NetworkSocket.Send(packet);
+            if(packet != null && packet.Data != null) {
+                SocketError SE;
+
+                NetworkSocket.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out SE);
+
+                if (SE != SocketError.Success) {
+                    Disconnect();
+                    return;
+                }else {
+                    packet.HasBeenSent(this);
+                }
+            }
         }
 
        
 
         public void BeginReceve(Action<InternalSyncIOConnectedClient, IPacket> callback) {
-            if (NetworkSocket == null)
-                throw new Exception("Socket not valid.");
 
             if (ReceveCallback != null)
                 throw new Exception("Alredy listening.");
 
             ReceveCallback = callback;
             if (ReceveCallback == null)
-                throw new Exception("Invaslid callback");
+                throw new Exception("Invalid callback");
 
             ReceveWithDefragger();
         }
@@ -163,6 +178,10 @@ namespace SyncIO.Server {
             }
 
             ReceveWithDefragger();
+        }
+
+        public void SetID(Guid _id) {
+            ID = _id;
         }
 
     }

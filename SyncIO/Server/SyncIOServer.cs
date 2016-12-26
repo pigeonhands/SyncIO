@@ -1,6 +1,6 @@
 ﻿using SyncIO.Network;
 using SyncIO.Network.Callbacks;
-using SyncIO.Server.Network;
+using SyncIO.Server;
 using SyncIO.Transport;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,11 +21,12 @@ namespace SyncIO.Server{
 
         private Packager Packager;
         private CallbackManager<SyncIOConnectedClient> Callbacks;
-
+        private Func<Guid> GuidGenerator = () => Guid.NewGuid();
 
         public SyncIOServer(TransportProtocal _protocal, Packager _packager) {
             Protocal = _protocal;
             Packager = _packager;
+            Callbacks = new CallbackManager<SyncIOConnectedClient>();
         }
 
         public SyncIOServer() : this(TransportProtocal.IPv4, new Packager()) {
@@ -36,23 +38,34 @@ namespace SyncIO.Server{
         /// <param name="port">Port to listen</param>
         /// <returns>The open socket on success, else null.</returns>
         public SyncIOSocket ListenTCP(int port) {
-            var tcpSock = new TcpSocket(Protocal);
+            var tcpSock = new TcpServerSocket(Protocal);
             tcpSock.OnClientConnect += TcpSock_OnClientConnect;
             if (!tcpSock.BeginAccept(port))
                 return null;
             return tcpSock;
         }
 
-        private void TcpSock_OnClientConnect(TcpSocket sender, Socket s) {
+        private void TcpSock_OnClientConnect(TcpServerSocket sender, Socket s) {
             var client = new InternalSyncIOConnectedClient(s, Packager);
+            client.SetID(GuidGenerator());
             client.BeginReceve(ReceveHandler);
-            OnClientConnect?.Invoke(this, client);
+            client.Send(new HandshakePacket(true, client.ID), (cl) => {
+                OnClientConnect?.Invoke(this, cl);//Trigger event after handshake packet has been sent.
+            });
         }
-
-        
 
         private void ReceveHandler(InternalSyncIOConnectedClient client, IPacket data) {
             Callbacks.Handle(client, data);
+        }
+
+        /// <summary>
+        /// If not set, clients may receve duplicate Guids.
+        /// </summary>
+        /// <param name="_call">Call to guid generator. By default is Guid.NewGuid</param>
+        public void SetGuidGenerator(Func<Guid> _call) {
+            if (_call == null)
+                return;
+            GuidGenerator = _call;
         }
 
 

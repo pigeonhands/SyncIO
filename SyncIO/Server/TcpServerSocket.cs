@@ -1,4 +1,5 @@
-﻿using SyncIO.Transport;
+﻿using SyncIO.Network;
+using SyncIO.Transport;
 using SyncIO.Transport.Packets;
 using System;
 using System.Collections.Generic;
@@ -8,16 +9,16 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO.Server.Network {
-    internal delegate void OnTCPSocketException(TcpSocket sender, Exception e);
+namespace SyncIO.Server {
+    internal delegate void OnTCPSocketException(TcpServerSocket sender, Exception e);
 
     /// <summary>
     /// Internal socket used for both client and server.
     /// </summary>
-    internal class TcpSocket : SyncIOSocket {
+    internal class TcpServerSocket : SyncIOSocket {
 
         public event OnTCPSocketException OnException;
-        public event Action<TcpSocket, Socket> OnClientConnect;
+        public event Action<TcpServerSocket, Socket> OnClientConnect;
 
         public TransportProtocal Protocal { get; }
         public bool Binded => (NetworkSocket?.Connected ?? false) && SuccessfulBind;
@@ -28,12 +29,12 @@ namespace SyncIO.Server.Network {
         private bool SuccessfulBind = false;
        
 
-        public TcpSocket(TransportProtocal _protocal) {
+        public TcpServerSocket(TransportProtocal _protocal) {
             Protocal = _protocal;
             InternalAcceptHandler = new AsyncCallback(HandleAccept);
         }
 
-        public TcpSocket() :this(TransportProtocal.IPv4) {
+        public TcpServerSocket() :this(TransportProtocal.IPv4) {
         }
 
         /// <summary>
@@ -50,10 +51,10 @@ namespace SyncIO.Server.Network {
 
         public bool Connect(string host, int port) {
             CreateNewSocket();
-            Port = port;
             try {
                 NetworkSocket.Connect(host, port);
                 SuccessfulBind = true;
+                EndPoint = (IPEndPoint)NetworkSocket.RemoteEndPoint;
             } catch(Exception ex) {
                 SuccessfulBind = false;
                 OnException?.Invoke(this, ex);
@@ -64,8 +65,10 @@ namespace SyncIO.Server.Network {
         public bool Connect(EndPoint endpoint) {
             CreateNewSocket();
             try {
+                NetworkSocket.Connect(endpoint);
                 SuccessfulBind = true;
-            }catch(Exception ex) {
+                EndPoint = (IPEndPoint)NetworkSocket.RemoteEndPoint;
+            } catch(Exception ex) {
                 SuccessfulBind = false;
                 OnException?.Invoke(this, ex);
             }
@@ -101,11 +104,12 @@ namespace SyncIO.Server.Network {
             NetworkSocket.BeginAccept(InternalAcceptHandler, null);
         }
 
-        public override void Close() {
+        protected override void Close() {
             if (Binded) {
                 NetworkSocket.Shutdown(SocketShutdown.Both);
                 NetworkSocket.Dispose();
                 NetworkSocket = null;
+                SuccessfulBind = false;
             }
         }
     }

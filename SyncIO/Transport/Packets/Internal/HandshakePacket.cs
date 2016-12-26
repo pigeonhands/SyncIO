@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace SyncIO.Transport.Packets.Internal {
     [Serializable]
-    internal class IdentifiedPacket : IPacket { //Primaraly for UDP
+    internal class HandshakePacket : IPacket {
+        public bool Success { get; set; }
         public Guid ID { get; set; }
-        public IPacket Packet { get; set; }
-        public IdentifiedPacket(Guid _id, IPacket _packet) {
+
+        public HandshakePacket(bool _success, Guid _id) {
+            Success = _success;
             ID = _id;
-            Packet = _packet;
         }
     }
 }
