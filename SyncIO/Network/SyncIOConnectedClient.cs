@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SyncIO.Network {
-    public delegate void OnClientDisconnectDelegate(SyncIOConnectedClient client);
+    public delegate void OnClientDisconnectDelegate(SyncIOConnectedClient client, Exception ex);
 
     /// <summary>
     /// A client that is connected to a SyncIOServer
@@ -34,13 +34,13 @@ namespace SyncIO.Network {
         public virtual void Send(IPacket packet) {
         }
 
-        protected void Disconnect() {
+        protected void Disconnect(Exception ex) {
             if(NetworkSocket != null) {
                 NetworkSocket.Shutdown(SocketShutdown.Both);
                 NetworkSocket.Dispose();
                 NetworkSocket = null;
             }
-            OnDisconnect?.Invoke(this);
+            OnDisconnect?.Invoke(this, ex);
         }
     }
 
@@ -124,7 +124,7 @@ namespace SyncIO.Network {
                 NetworkSocket.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out SE);
 
                 if (SE != SocketError.Success) {
-                    Disconnect();
+                    Disconnect(new SocketException());
                     return;
                 }else {
                     packet.HasBeenSent(this);
@@ -154,7 +154,7 @@ namespace SyncIO.Network {
             NetworkSocket.BeginReceive(Defragger.ReceveBuffer, Defragger.BufferIndex, Defragger.BytesToReceve, SocketFlags.None, out SE, InternalReceve, null);
 
             if (SE != SocketError.Success)
-                Disconnect();
+                Disconnect(new SocketException());
         }
 
         private void InternalReceve(IAsyncResult AR) {
@@ -162,7 +162,7 @@ namespace SyncIO.Network {
             int bytes = NetworkSocket.EndReceive(AR, out SE);
 
             if (SE != SocketError.Success) {
-                Disconnect();
+                Disconnect(new SocketException());
                 return;
             }
 
@@ -171,8 +171,8 @@ namespace SyncIO.Network {
                 try {
                     IPacket pack = Packager.Unpack(packet, PackagingConfiguration);
                     ReceveCallback(this, pack);
-                } catch {
-                    Disconnect();
+                } catch (Exception ex){
+                    Disconnect(ex);
                     return;
                 }
             }

@@ -14,7 +14,7 @@ using SyncIO.Transport.Packets.Internal;
 namespace SyncIO.Client {
 
     public delegate void OnHandshakeDelegate(SyncIOClient sender, Guid id, bool success);
-    public delegate void OnDisconnectDelegate(SyncIOClient sender);
+    public delegate void OnDisconnectDelegate(SyncIOClient sender, Exception ex);
     public class SyncIOClient : SyncIOSocket, ISyncIOClient {
 
         public event OnHandshakeDelegate OnHandshake;
@@ -58,13 +58,15 @@ namespace SyncIO.Client {
         }
 
         private void SetupConnection(Socket s) {
+            SetTcpKeepAlive(s);
+            EndPoint = ((IPEndPoint)s.RemoteEndPoint);
             Connection = new InternalSyncIOConnectedClient(s, Packager);
             Connection.BeginReceve(ReceveHandler);
             Connection.OnDisconnect += Connection_OnDisconnect;
         }
 
-        private void Connection_OnDisconnect(SyncIOConnectedClient client) {
-            
+        private void Connection_OnDisconnect(SyncIOConnectedClient client, Exception ex) {
+            OnDisconnect?.Invoke(this, ex);
         }
 
         private void ReceveHandler(InternalSyncIOConnectedClient client, IPacket data) {
@@ -83,7 +85,6 @@ namespace SyncIO.Client {
             var sock = NewSocket();
             try {
                 sock.Connect(host, port);
-                EndPoint = ((IPEndPoint)sock.RemoteEndPoint);
                 SetupConnection(sock);
                 return true;
             } catch {

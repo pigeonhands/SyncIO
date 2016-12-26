@@ -16,9 +16,10 @@ namespace SyncIO.Transport {
         #region " Constructors "
         public Packager(Type[] ManualTypes){
             var AddTypes = new List<Type>(new Type[] { //For object[] sending, incase manual types do not contain these. 
-                    typeof(IdentifiedPacket),
+                    typeof(HandshakePacket),
                     typeof(ObjectArrayPacket),
-
+                    typeof(IdentifiedPacket),
+                   
                     typeof(Guid),
                     typeof(Guid[]),
 

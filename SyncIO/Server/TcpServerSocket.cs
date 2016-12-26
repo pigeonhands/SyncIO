@@ -21,7 +21,7 @@ namespace SyncIO.Server {
         public event Action<TcpServerSocket, Socket> OnClientConnect;
 
         public TransportProtocal Protocal { get; }
-        public bool Binded => (NetworkSocket?.Connected ?? false) && SuccessfulBind;
+        public bool Binded => (NetworkSocket?.IsBound ?? false) && SuccessfulBind;
        
 
         private AsyncCallback InternalAcceptHandler;
@@ -47,6 +47,7 @@ namespace SyncIO.Server {
                 NetworkSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             else
                 NetworkSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            SetTcpKeepAlive(NetworkSocket);
         }
 
         public bool Connect(string host, int port) {
