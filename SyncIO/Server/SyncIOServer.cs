@@ -12,16 +12,18 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections;
 
 namespace SyncIO.Server{
     public delegate void OnClientConnectDelegate(SyncIOServer sender, SyncIOConnectedClient client);
-    public class SyncIOServer{
+    public class SyncIOServer : IEnumerable<SyncIOSocket>{
         public event OnClientConnectDelegate OnClientConnect;
         public TransportProtocal Protocal { get; }
 
         private Packager Packager;
         private CallbackManager<SyncIOConnectedClient> Callbacks;
         private Func<Guid> GuidGenerator = () => Guid.NewGuid();
+        private List<SyncIOSocket> OpenSockets = new List<SyncIOSocket>();
 
         public SyncIOServer(TransportProtocal _protocal, Packager _packager) {
             Protocal = _protocal;
@@ -42,6 +44,12 @@ namespace SyncIO.Server{
             tcpSock.OnClientConnect += TcpSock_OnClientConnect;
             if (!tcpSock.BeginAccept(port))
                 return null;
+
+            OpenSockets.Add(tcpSock);
+            tcpSock.OnClose += (s) => {
+                OpenSockets.Remove(s);
+            };
+           
             return tcpSock;
         }
 
@@ -95,5 +103,12 @@ namespace SyncIO.Server{
             Callbacks.SetPacketHandler(callback);
         }
 
+        public IEnumerator<SyncIOSocket> GetEnumerator() {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() {
+            return OpenSockets.GetEnumerator();
+        }
     }
 }

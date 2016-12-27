@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace SyncIO.Server {
     internal delegate void OnTCPSocketException(TcpServerSocket sender, Exception e);
+    internal delegate void OnTCPSocketClose(TcpServerSocket sender);
 
     /// <summary>
     /// Internal socket used for both client and server.
@@ -18,6 +19,7 @@ namespace SyncIO.Server {
     internal class TcpServerSocket : SyncIOSocket {
 
         public event OnTCPSocketException OnException;
+        public event OnTCPSocketClose OnClose;
         public event Action<TcpServerSocket, Socket> OnClientConnect;
 
         public TransportProtocal Protocal { get; }
@@ -112,6 +114,7 @@ namespace SyncIO.Server {
                 NetworkSocket = null;
                 SuccessfulBind = false;
             }
+            OnClose?.Invoke(this);
         }
     }
 }
