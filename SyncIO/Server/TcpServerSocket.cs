@@ -83,6 +83,7 @@ namespace SyncIO.Server {
             try {
                 NetworkSocket.Bind(ep);
                 NetworkSocket.Listen(50);
+                EndPoint = (IPEndPoint)NetworkSocket.LocalEndPoint;
                 SuccessfulBind = true;
             } catch { 
                 NetworkSocket = null;
@@ -102,19 +103,20 @@ namespace SyncIO.Server {
                 Socket s = NetworkSocket.EndAccept(ar);
                 OnClientConnect?.Invoke(this, s);
             } catch (Exception ex) {
-                OnException?.Invoke(this, ex);
+                LastError = ex;
+                Close();
+                return;
             }
             NetworkSocket.BeginAccept(InternalAcceptHandler, null);
         }
 
         protected override void Close() {
+            OnClose?.Invoke(this);
             if (Binded) {
-                NetworkSocket.Shutdown(SocketShutdown.Both);
                 NetworkSocket.Dispose();
                 NetworkSocket = null;
                 SuccessfulBind = false;
             }
-            OnClose?.Invoke(this);
         }
     }
 }

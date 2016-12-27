@@ -28,8 +28,8 @@ namespace SyncIO.Network {
         }
 
         public void Dispose() {
-            Close();
             OnDisconnect?.Invoke(this, LastError);
+            Close();
         }
 
         protected void SetTcpKeepAlive(Socket socket) {

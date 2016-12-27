@@ -61,7 +61,8 @@ namespace SyncIOTests {
                 s.Send(cPayload);
             });
 
-            Assert.IsNotNull(server.ListenTCP(9000));
+            var listenSock = server.ListenTCP(9000);
+            Assert.IsNotNull(listenSock);
 
             var client = new SyncIOClient(TransportProtocal.IPv4, packer);
 
@@ -87,6 +88,8 @@ namespace SyncIOTests {
            
 
             Assert.IsTrue(done.WaitOne(10 * 1000));
+
+            listenSock.Dispose();
         }
     }
 }

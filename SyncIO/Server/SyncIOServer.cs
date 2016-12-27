@@ -104,7 +104,7 @@ namespace SyncIO.Server{
         }
 
         public IEnumerator<SyncIOSocket> GetEnumerator() {
-            throw new NotImplementedException();
+            return OpenSockets.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator() {
