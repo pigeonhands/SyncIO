@@ -35,5 +35,9 @@ namespace SyncIO.Network {
         protected void SetTcpKeepAlive(Socket socket) {
             socket?.IOControl(IOControlCode.KeepAliveValues, socketOptions, null);
         }
+
+        public override string ToString() {
+            return EndPoint.ToString();
+        }
     }
 }
