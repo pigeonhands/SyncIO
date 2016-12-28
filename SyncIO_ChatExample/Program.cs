@@ -24,12 +24,13 @@ namespace SyncIO_ChatExample {
 
 
         private static void Client() {
+
             var packer = new Packager(new Type[] {
                 typeof(SetName),
                 typeof(ChatMessage)
-            });
+            }); //When sending custom objects, you must create a new packer and specify them.
 
-            var client = new SyncIOClient(TransportProtocal.IPv4, packer);
+            var client = new SyncIOClient(TransportProtocal.IPv4, packer); //Using ipv4 and the packer that has teh custom types.
 
             client.SetHandler<ChatMessage>((SyncIOClient sender, ChatMessage messagePacket) => {
                 Console.WriteLine(messagePacket.Message);
@@ -87,11 +88,25 @@ namespace SyncIO_ChatExample {
                 Console.WriteLine(msg);
              });
 
-            var sock = server.ListenTCP(9999);
-            if(sock == null)
-                ConsoleExtentions.ErrorAndClose("Failed to listen on port 9999");
+            //Listen on all of the following ports:
+            var firstSock = server.ListenTCP(9996); //Add it to a variable for closing example
+            server.ListenTCP(9997);
+            server.ListenTCP(9998);
+            server.ListenTCP(9999);
 
-            Console.WriteLine("Listening on {0}", sock);
+            if(server.Count() < 1)
+                ConsoleExtentions.ErrorAndClose("Failed to listen on any ports.");
+
+            foreach (var sock in server) {
+                Console.WriteLine("Listeniing on {0}", sock);
+                sock.OnDisconnect += (sender, err) => {
+                    Console.WriteLine("0] Socket closked. {1}", sender, err);
+                };
+            }
+
+            firstSock.Dispose(); //Either close from var
+            
+
             while (true)
                 Console.ReadLine();
         }

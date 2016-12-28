@@ -103,6 +103,12 @@ namespace SyncIO.Server{
             Callbacks.SetPacketHandler(callback);
         }
 
+        public SyncIOSocket this[int port] {
+            get {
+                return OpenSockets.FirstOrDefault(x => x.EndPoint.Port == port);
+            }
+        }
+
         public IEnumerator<SyncIOSocket> GetEnumerator() {
             return OpenSockets.GetEnumerator();
         }
