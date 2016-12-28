@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
+using System.Threading;
 
 namespace SyncIO.Client {
 
@@ -31,6 +32,7 @@ namespace SyncIO.Client {
         private InternalSyncIOConnectedClient Connection;
         private Packager Packager;
         private bool HandshakeComplete;
+        private ManualResetEvent HandshakeEvent = new ManualResetEvent(false);
 
         public SyncIOClient(TransportProtocal _protocal, Packager _packager) {
             Protocal = _protocal;
@@ -40,6 +42,7 @@ namespace SyncIO.Client {
             Callbacks.SetHandler<HandshakePacket>((c, p) => {
                 HandshakeComplete = p.Success;
                 Connection.SetID(p.ID);
+                HandshakeEvent?.Set();
                 OnHandshake?.Invoke(this, ID, HandshakeComplete);
             });
         }
@@ -137,6 +140,20 @@ namespace SyncIO.Client {
 
         public void Send(IPacket packet) {
             Send(null, packet);
+        }
+
+        /// <summary>
+        /// Blocks and waits for handshake.
+        /// </summary>
+        /// <returns></returns>
+        public bool WaitForHandshake() {
+            if (Connected)
+                return true;
+
+            HandshakeEvent?.WaitOne();
+            HandshakeEvent?.Dispose();
+            HandshakeEvent = null;
+            return Connected;
         }
     }
 
