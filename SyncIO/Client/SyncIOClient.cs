@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
 using System.Threading;
+using SyncIO.Transport.Encryption;
 
 namespace SyncIO.Client {
 
@@ -140,6 +141,21 @@ namespace SyncIO.Client {
 
         public void Send(IPacket packet) {
             Send(null, packet);
+        }
+
+
+        /// <summary>
+        /// Sets the encryption for traffic.
+        /// </summary>
+        /// <param name="encryption">Encryption to use.</param>
+        public void SetEncryption(ISyncIOEncryption encryption) {
+            if (Connection == null)
+                return;
+
+            if (Connection.PackagingConfiguration == null)
+                Connection.PackagingConfiguration = new PackConfig();
+
+            Connection.PackagingConfiguration.Encryption = encryption;
         }
 
         /// <summary>
