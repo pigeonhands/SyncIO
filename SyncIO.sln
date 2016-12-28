@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncIO", "SyncIO\SyncIO.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncIOTests", "SyncIOTests\SyncIOTests.csproj", "{A1AF25EC-CF85-4985-8875-5EFF95012815}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SyncIO_ChatExample", "SyncIO_ChatExample\SyncIO_ChatExample.csproj", "{D10484DF-6991-43CF-BACB-CBA9FA827BA5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{A1AF25EC-CF85-4985-8875-5EFF95012815}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1AF25EC-CF85-4985-8875-5EFF95012815}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1AF25EC-CF85-4985-8875-5EFF95012815}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D10484DF-6991-43CF-BACB-CBA9FA827BA5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D10484DF-6991-43CF-BACB-CBA9FA827BA5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D10484DF-6991-43CF-BACB-CBA9FA827BA5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D10484DF-6991-43CF-BACB-CBA9FA827BA5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
