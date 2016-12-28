@@ -25,15 +25,33 @@ namespace SyncIO_ChatExample {
 
         private static void Client() {
 
+            //When sending custom objects, you must create a new packer and specify them.
             var packer = new Packager(new Type[] {
                 typeof(SetName),
                 typeof(ChatMessage)
-            }); //When sending custom objects, you must create a new packer and specify them.
+            });
 
-            var client = new SyncIOClient(TransportProtocal.IPv4, packer); //Using ipv4 and the packer that has teh custom types.
+            //Using ipv4 and the packer that has the custom types.
+            var client = new SyncIOClient(TransportProtocal.IPv4, packer); 
 
+            //The diffrent types of handlers: (all optional)
+
+            //The type handler.
+            //This handler handles a specific object type.
             client.SetHandler<ChatMessage>((SyncIOClient sender, ChatMessage messagePacket) => {
+                //All ChatMessage packages will be passed to this callback
                 Console.WriteLine(messagePacket.Message);
+            });
+
+            //This handler handles any IPacket that does not have a handler.
+            client.SetHandler((SyncIOClient sender, IPacket p) => {
+                //Any packets without a set handler will be passed here
+            });
+
+            //This handler handles anything that is not a SINGLE IPacket object
+            client.SetHandler((SyncIOClient sender, object[] data) => {
+                //Any object array sent will be passed here, even if the array contains
+                //A packet with a handler (e.g. ChatMessage)
             });
 
             if (!client.Connect("127.0.0.1", 9999))
@@ -43,6 +61,11 @@ namespace SyncIO_ChatExample {
             client.Send(new SetName(name));
 
             Console.WriteLine("Connected. You may now send messages.");
+
+            client.OnHandshake += (s, id, success) => {
+
+            };
+            
 
             bool connected = true;
             client.OnDisconnect += (s, err) => {
@@ -59,6 +82,7 @@ namespace SyncIO_ChatExample {
 
 
         private static void Server() {
+
             var packer = new Packager(new Type[] {
                 typeof(SetName),
                 typeof(ChatMessage)
@@ -69,6 +93,7 @@ namespace SyncIO_ChatExample {
             var clients = new Dictionary<Guid, ConnectedChatClient>();
 
             var sendToAll = new Action<IPacket>((p) => {
+                //Send to all clients who have set a name.
                 foreach (var c in clients.Select(x => x.Value))
                     c.Connection.Send(p);
             });
@@ -98,13 +123,18 @@ namespace SyncIO_ChatExample {
                 ConsoleExtentions.ErrorAndClose("Failed to listen on any ports.");
 
             foreach (var sock in server) {
-                Console.WriteLine("Listeniing on {0}", sock);
+                Console.WriteLine("Listening on {0}", sock.EndPoint.Port);
                 sock.OnDisconnect += (sender, err) => {
-                    Console.WriteLine("0] Socket closked. {1}", sender, err);
+                    Console.WriteLine("0] Socket closked. {1}", sender.EndPoint.Port, err);
                 };
             }
 
-            firstSock.Dispose(); //Either close from var
+            Console.WriteLine("Closing port {0} and 9998", firstSock.EndPoint.Port);
+            firstSock.Dispose();    //Either close from var
+            server[9998].Dispose(); //Or by server index.
+
+            foreach (var sock in server) 
+                Console.WriteLine("Listening on {0}", sock.EndPoint.Port);
             
 
             while (true)

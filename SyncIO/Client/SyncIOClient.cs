@@ -25,7 +25,7 @@ namespace SyncIO.Client {
         /// </summary>
         public Guid ID => Connection?.ID ?? Guid.Empty;
         public TransportProtocal Protocal { get; }
-        public bool Connected => Connection != null;
+        public bool Connected => ID != Guid.Empty;
 
         private CallbackManager<SyncIOClient> Callbacks;
         private InternalSyncIOConnectedClient Connection;
