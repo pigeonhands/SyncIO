@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SyncIO_ChatExample {
@@ -54,18 +55,31 @@ namespace SyncIO_ChatExample {
                 //A packet with a handler (e.g. ChatMessage)
             });
 
-            if (!client.Connect("127.0.0.1", 9999))
+
+
+            if (!client.Connect("127.0.0.1", new Random().Next(9996, 10000)))//Connect to any of the open ports.
                 ConsoleExtentions.ErrorAndClose("Failed to connect to server.");
+
+            //Connecting and handshake are not the same.
+            //Connecting = Establishing a connection with a socket
+            //Handskake  = Establishing a connection with a SyncIOServer and getting an ID.
+            Console.WriteLine("Connected on port {0}. Waiting for handshake.", client.EndPoint.Port);
+
+            bool success = client.WaitForHandshake();
+            /*
+             * The asynchronous way to get handshake would be subscribing
+             * to the client.OnHandshake event.
+             */
+
+            if (!success)
+                ConsoleExtentions.ErrorAndClose("Handshake failed.");
+
+            Console.WriteLine("Handshake success. Got ID: {0}", client.ID);
 
             var name = ConsoleExtentions.GetNonEmptyString("Enter a name: ");
             client.Send(new SetName(name));
 
-            Console.WriteLine("Connected. You may now send messages.");
-
-            client.OnHandshake += (s, id, success) => {
-
-            };
-            
+            Console.WriteLine("Name set. You can now send messages.");
 
             bool connected = true;
             client.OnDisconnect += (s, err) => {
@@ -113,6 +127,7 @@ namespace SyncIO_ChatExample {
                 Console.WriteLine(msg);
              });
 
+            Console.WriteLine("Closing socket examples:");
             //Listen on all of the following ports:
             var firstSock = server.ListenTCP(9996); //Add it to a variable for closing example
             server.ListenTCP(9997);
@@ -125,17 +140,28 @@ namespace SyncIO_ChatExample {
             foreach (var sock in server) {
                 Console.WriteLine("Listening on {0}", sock.EndPoint.Port);
                 sock.OnDisconnect += (sender, err) => {
-                    Console.WriteLine("0] Socket closked. {1}", sender.EndPoint.Port, err);
+                    Console.WriteLine("{0}] Socket closed. {1}", sender.EndPoint.Port, err);
                 };
             }
 
             Console.WriteLine("Closing port {0} and 9998", firstSock.EndPoint.Port);
             firstSock.Dispose();    //Either close from var
-            server[9998].Dispose(); //Or by server index.
+            server[9997].Dispose(); //Or by server index.
 
             foreach (var sock in server) 
                 Console.WriteLine("Listening on {0}", sock.EndPoint.Port);
-            
+
+            Console.WriteLine("Reopening ports in 3 seconds");
+            Thread.Sleep(3000);
+            Console.Clear();
+
+            //Reopen:
+            server.ListenTCP(9996);
+            server.ListenTCP(9997);
+
+            foreach (var sock in server)
+                Console.WriteLine("Listening on {0}", sock.EndPoint.Port);
+
 
             while (true)
                 Console.ReadLine();
