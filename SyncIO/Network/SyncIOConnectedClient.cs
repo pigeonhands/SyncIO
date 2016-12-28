@@ -1,6 +1,7 @@
 ﻿using SyncIO.Network;
 using SyncIO.Network.Callbacks;
 using SyncIO.Transport;
+using SyncIO.Transport.Encryption;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
 using System;
@@ -29,6 +30,10 @@ namespace SyncIO.Network {
         /// Underlying socket connection for the client
         /// </summary>
         protected Socket NetworkSocket { get; set; }
+
+        internal PackConfig PackagingConfiguration { get; set; }
+
+
         public void Send(params object[] data) {
             Send(null, data);
         }
@@ -51,6 +56,17 @@ namespace SyncIO.Network {
             }
             OnDisconnect?.Invoke(this, ex);
         }
+
+        /// <summary>
+        /// Sets the encryption for traffic.
+        /// </summary>
+        /// <param name="encryption">Encryption to use.</param>
+        public void SetEncryption(ISyncIOEncryption encryption) {
+            if (PackagingConfiguration == null)
+                PackagingConfiguration = new PackConfig();
+
+            PackagingConfiguration.Encryption = encryption;
+        }
     }
 
     /// <summary>
@@ -60,7 +76,6 @@ namespace SyncIO.Network {
 
        
         public Packager Packager { get; }
-        public PackConfig PackagingConfiguration { get; set; }
 
         /// <summary>
         /// Multithread sync object

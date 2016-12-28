@@ -1,5 +1,6 @@
 ﻿using NetSerializer;
 using SyncIO.Transport.Encryption;
+using SyncIO.Transport.Encryption.Defaults;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
 using System;
@@ -135,6 +136,17 @@ namespace SyncIO.Transport {
 
         internal byte[] PackArray(object[] arr, PackConfig cfg) {
             return Pack(new ObjectArrayPacket(arr), cfg);
+        }
+
+        /// <summary>
+        /// Generates initilizes a new instance of SyncIOEncryptionRijndael
+        /// </summary>
+        /// <param name="key">Must be 16 bytes long.</param>
+        /// <returns></returns>
+        public ISyncIOEncryption NewRijndaelEncryption(byte[] key) {
+            if (key.Length != 16)
+                throw new ArgumentException("key needs to be 16 bytes long.", "key");
+            return new SyncIOEncryptionRijndael(key);
         }
     }
 }

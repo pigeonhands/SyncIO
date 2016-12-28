@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
 using System.Threading;
+using SyncIO.Transport.Encryption;
 
 namespace SyncIO.Client {
 
@@ -142,6 +143,21 @@ namespace SyncIO.Client {
             Send(null, packet);
         }
 
+
+        /// <summary>
+        /// Sets the encryption for traffic.
+        /// </summary>
+        /// <param name="encryption">Encryption to use.</param>
+        public void SetEncryption(ISyncIOEncryption encryption) {
+            if (Connection == null)
+                return;
+
+            if (Connection.PackagingConfiguration == null)
+                Connection.PackagingConfiguration = new PackConfig();
+
+            Connection.PackagingConfiguration.Encryption = encryption;
+        }
+
         /// <summary>
         /// Blocks and waits for handshake.
         /// </summary>
@@ -150,9 +166,12 @@ namespace SyncIO.Client {
             if (Connected)
                 return true;
 
-            HandshakeEvent?.WaitOne();
-            HandshakeEvent?.Dispose();
-            HandshakeEvent = null;
+            if(HandshakeEvent?.WaitOne(TimeSpan.FromSeconds(30)) ?? false) {
+                //Dispose if event was triggered
+                HandshakeEvent?.Dispose();
+                HandshakeEvent = null;
+            }
+            
             return Connected;
         }
     }
