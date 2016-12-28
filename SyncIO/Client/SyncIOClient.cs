@@ -166,9 +166,12 @@ namespace SyncIO.Client {
             if (Connected)
                 return true;
 
-            HandshakeEvent?.WaitOne();
-            HandshakeEvent?.Dispose();
-            HandshakeEvent = null;
+            if(HandshakeEvent?.WaitOne(TimeSpan.FromSeconds(30)) ?? false) {
+                //Dispose if event was triggered
+                HandshakeEvent?.Dispose();
+                HandshakeEvent = null;
+            }
+            
             return Connected;
         }
     }
