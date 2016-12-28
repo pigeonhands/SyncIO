@@ -44,6 +44,8 @@ namespace SyncIO.Client {
                 HandshakeComplete = p.Success;
                 Connection.SetID(p.ID);
                 HandshakeEvent?.Set();
+                HandshakeEvent?.Dispose();
+                HandshakeEvent = null;
                 OnHandshake?.Invoke(this, ID, HandshakeComplete);
             });
         }
@@ -166,12 +168,8 @@ namespace SyncIO.Client {
             if (Connected)
                 return true;
 
-            if(HandshakeEvent?.WaitOne(TimeSpan.FromSeconds(30)) ?? false) {
-                //Dispose if event was triggered
-                HandshakeEvent?.Dispose();
-                HandshakeEvent = null;
-            }
-            
+            HandshakeEvent?.WaitOne(TimeSpan.FromSeconds(30));
+
             return Connected;
         }
     }
