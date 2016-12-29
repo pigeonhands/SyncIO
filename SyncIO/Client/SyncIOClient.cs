@@ -17,6 +17,7 @@ namespace SyncIO.Client {
 
     public delegate void OnHandshakeDelegate(SyncIOClient sender, Guid id, bool success);
     public delegate void OnDisconnectDelegate(SyncIOClient sender, Exception ex);
+
     public class SyncIOClient : SyncIOSocket, ISyncIOClient {
 
         public event OnHandshakeDelegate OnHandshake;
@@ -34,6 +35,7 @@ namespace SyncIO.Client {
         private Packager Packager;
         private bool HandshakeComplete;
         private ManualResetEvent HandshakeEvent = new ManualResetEvent(false);
+        private ClientUDPSocket UdpClient;
 
         public SyncIOClient(TransportProtocal _protocal, Packager _packager) {
             Protocal = _protocal;
@@ -171,6 +173,57 @@ namespace SyncIO.Client {
             HandshakeEvent?.WaitOne(TimeSpan.FromSeconds(30));
 
             return Connected;
+        }
+
+        /// <summary>
+        /// Should be used to RE-CONFIRM udp connection. 
+        /// Will throw an exception if TryOpenUDPConnection is not called first.
+        /// </summary>
+        public void SendUDPHandshake() { //Send handshake packet regardless if alredy confirmed
+            UdpClient.Send(new HandshakePacket(ID));
+        }
+
+
+        /// <summary>
+        /// Blocks and waits for UDP.
+        /// </summary>
+        /// <returns></returns>
+        public bool WaitForUDP() {
+
+            if (UdpClient == null)
+                return false;
+
+            if (HasUDP)
+                return true;
+
+            HandshakeEvent?.WaitOne(TimeSpan.FromSeconds(30));
+
+            return HasUDP;
+        }
+
+        public override SyncIOSocket TryOpenUDPConnection() {
+
+            if (!Connected) 
+                throw new Exception("Must be connecteded and hanshake must be completed before opening UDP connection.");
+
+            if (HasUDP)
+                return this; //Alredy confirmed UDP.
+
+            HandshakeEvent = new ManualResetEvent(false); //Reuse same event. We are connected so it cant be being used.
+
+            if (UdpClient == null)
+                UdpClient = new Client.ClientUDPSocket(this, Packager);
+
+            Callbacks.SetHandler<UdpHandshakeResponce>((c, p) => {
+                HasUDP = p.Success;
+
+                HandshakeEvent?.Set();
+                HandshakeEvent?.Dispose();
+                HandshakeEvent = null;
+            });
+
+            SendUDPHandshake();
+            return this;
         }
     }
 

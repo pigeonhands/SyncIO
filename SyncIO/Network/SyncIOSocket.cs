@@ -4,11 +4,10 @@ using System.Net.Sockets;
 
 namespace SyncIO.Network {
 
-    public delegate void OnSyncIOSocketDisconnect(SyncIOSocket sender, Exception e);
     public abstract class SyncIOSocket : IDisposable {
 
         public virtual IPEndPoint EndPoint { get; protected set; }
-        public event OnSyncIOSocketDisconnect OnDisconnect;
+        public bool HasUDP { get; internal set; }
 
         protected Exception LastError = null;
 
@@ -24,11 +23,20 @@ namespace SyncIO.Network {
             BitConverter.GetBytes((uint)keepaliveInterval).CopyTo(socketOptions, sizeof(uint) * 2);
         }
 
+        /// <summary>
+        /// For both client and server
+        /// Client - Starts a UDP handshake
+        /// Server - Opens oprt for UDP traffic
+        /// </summary>
+        /// <returns>Self for chaining</returns>
+        public virtual SyncIOSocket TryOpenUDPConnection() {
+            return this;
+        }
+
         protected virtual void Close() {
         }
 
         public void Dispose() {
-            OnDisconnect?.Invoke(this, LastError);
             Close();
         }
 

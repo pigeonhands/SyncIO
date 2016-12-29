@@ -14,11 +14,10 @@ namespace SyncIO.Server {
     internal delegate void OnTCPSocketClose(TcpServerSocket sender);
 
     /// <summary>
-    /// Internal socket used for both client and server.
+    /// Internal TCP server socket.
     /// </summary>
     internal class TcpServerSocket : SyncIOSocket {
 
-        public event OnTCPSocketException OnException;
         public event OnTCPSocketClose OnClose;
         public event Action<TcpServerSocket, Socket> OnClientConnect;
 
@@ -29,14 +28,15 @@ namespace SyncIO.Server {
         private AsyncCallback InternalAcceptHandler;
         private Socket NetworkSocket;
         private bool SuccessfulBind = false;
-       
+        private SyncIOServer parent;
 
-        public TcpServerSocket(TransportProtocal _protocal) {
+        public TcpServerSocket(TransportProtocal _protocal, SyncIOServer _parent) {
             Protocal = _protocal;
             InternalAcceptHandler = new AsyncCallback(HandleAccept);
+            parent = _parent;
         }
 
-        public TcpServerSocket() :this(TransportProtocal.IPv4) {
+        public TcpServerSocket(SyncIOServer _parent) :this(TransportProtocal.IPv4, _parent) {
         }
 
         /// <summary>
@@ -50,32 +50,6 @@ namespace SyncIO.Server {
             else
                 NetworkSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             SetTcpKeepAlive(NetworkSocket);
-        }
-
-        public bool Connect(string host, int port) {
-            CreateNewSocket();
-            try {
-                NetworkSocket.Connect(host, port);
-                SuccessfulBind = true;
-                EndPoint = (IPEndPoint)NetworkSocket.RemoteEndPoint;
-            } catch(Exception ex) {
-                SuccessfulBind = false;
-                OnException?.Invoke(this, ex);
-            }
-            return SuccessfulBind;
-        }
-
-        public bool Connect(EndPoint endpoint) {
-            CreateNewSocket();
-            try {
-                NetworkSocket.Connect(endpoint);
-                SuccessfulBind = true;
-                EndPoint = (IPEndPoint)NetworkSocket.RemoteEndPoint;
-            } catch(Exception ex) {
-                SuccessfulBind = false;
-                OnException?.Invoke(this, ex);
-            }
-            return SuccessfulBind;
         }
 
         public bool BeginAccept (EndPoint ep) {

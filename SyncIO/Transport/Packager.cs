@@ -110,12 +110,17 @@ namespace SyncIO.Transport {
             }
         }
 
-        internal byte[] Pack(Guid ID, IPacket p, PackConfig cfg) {
+        /// <summary>
+        /// Boxes p into a IdentifiedPacket object then packs.
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="p"></param>
+        /// <param name="cfg"></param>
+        /// <returns></returns>
+        internal byte[] Pack(Guid ID, IPacket p) {
             using (var ms = new MemoryStream()) {
                 NSSerializer.SerializeDirect<IdentifiedPacket>(ms, new IdentifiedPacket(ID, p));
                 var data = ms.ToArray();
-                if (cfg != null)
-                    data = cfg.PostPacking(data);
                 return data;
             }
         }

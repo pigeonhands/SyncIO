@@ -14,5 +14,13 @@ namespace SyncIO.Transport.Packets.Internal {
             Success = _success;
             ID = _id;
         }
+
+        /// <summary>
+        /// For UDP. Success is ignored.
+        /// </summary>
+        /// <param name="_id"></param>
+        public HandshakePacket(Guid _id) {
+            ID = _id;
+        }
     }
 }
