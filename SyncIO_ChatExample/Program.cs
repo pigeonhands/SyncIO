@@ -139,7 +139,7 @@ namespace SyncIO_ChatExample {
 
             foreach (var sock in server) {
                 Console.WriteLine("Listening on {0}", sock.EndPoint.Port);
-                sock.OnDisconnect += (sender, err) => {
+                sock.OnClose += (sender, err) => {
                     Console.WriteLine("{0}] Socket closed. {1}", sender.EndPoint.Port, err);
                 };
             }

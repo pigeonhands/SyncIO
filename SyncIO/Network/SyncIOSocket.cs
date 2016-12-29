@@ -4,7 +4,10 @@ using System.Net.Sockets;
 
 namespace SyncIO.Network {
 
+    public delegate void OnSyncIOSocketClose(SyncIOSocket sender, Exception e);
     public abstract class SyncIOSocket : IDisposable {
+
+        public event OnSyncIOSocketClose OnClose;
 
         public virtual IPEndPoint EndPoint { get; protected set; }
         public bool HasUDP { get; internal set; }
@@ -37,6 +40,7 @@ namespace SyncIO.Network {
         }
 
         public void Dispose() {
+            OnClose?.Invoke(this, LastError);
             Close();
         }
 
