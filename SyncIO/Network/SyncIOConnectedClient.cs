@@ -54,7 +54,7 @@ namespace SyncIO.Network {
         public virtual void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
         }
 
-        protected void Disconnect(Exception ex) {
+        public void Disconnect(Exception ex) {
             if(NetworkSocket != null) {
                 NetworkSocket.Shutdown(SocketShutdown.Both);
                 NetworkSocket.Dispose();

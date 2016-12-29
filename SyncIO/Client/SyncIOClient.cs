@@ -60,6 +60,8 @@ namespace SyncIO.Client {
         /// Possably add support for connecting to multiple servers.
         /// </summary>
         private Socket NewSocket() {
+            Connection?.Disconnect(null);
+            Connection = null;
             if (Protocal == TransportProtocal.IPv6)
                 return new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             else
