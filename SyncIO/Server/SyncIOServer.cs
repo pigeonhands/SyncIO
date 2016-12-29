@@ -38,20 +38,43 @@ namespace SyncIO.Server {
         /// <param name="port">Port to listen</param>
         /// <returns>The open socket on success, else null.</returns>
         public SyncIOSocket ListenTCP(int port) {
-            var tcpSock = new TcpServerSocket(Protocal, this);
-            tcpSock.OnClientConnect += TcpSock_OnClientConnect;
-            if (!tcpSock.BeginAccept(port))
+            var baseSock = new BaseServerSocket(Protocal);
+            baseSock.OnClientConnect += TcpSock_OnClientConnect;
+            if (!baseSock.BeginAccept(port))
                 return null;
 
-            OpenSockets.Add(tcpSock);
-            tcpSock.OnClose += (s) => {
+            OpenSockets.Add(baseSock);
+            baseSock.OnClose += (s) => {
                 OpenSockets.Remove(s);
             };
-           
-            return tcpSock;
+
+            baseSock.UdpDataReceved += HandleUDPData;
+
+            return baseSock;
         }
 
-        private void TcpSock_OnClientConnect(TcpServerSocket sender, Socket s) {
+        private void HandleUDPData(byte[] data) {
+            try {
+                var p = Packager.UnpackIdentified(data);
+
+                var client = Clients[p.ID] as InternalSyncIOConnectedClient;
+                if (client != null) {
+
+                    if(p.Packet is UdpHandshake) {
+                        client.Send(p.Packet);
+                    }else {
+                        ReceveHandler(client, p.Packet);
+                    }
+
+                }
+                    
+
+            } catch {
+                //Failed UDP accept.
+            }
+        }
+
+        private void TcpSock_OnClientConnect(BaseServerSocket sender, Socket s) {
             var client = new InternalSyncIOConnectedClient(s, Packager);
 
             client.SetID(GuidGenerator());

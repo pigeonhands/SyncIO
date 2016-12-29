@@ -20,6 +20,7 @@ namespace SyncIO.Transport {
                     typeof(HandshakePacket),
                     typeof(ObjectArrayPacket),
                     typeof(IdentifiedPacket),
+                    typeof(UdpHandshake),
                    
                     typeof(Guid),
                     typeof(Guid[]),
@@ -137,6 +138,14 @@ namespace SyncIO.Transport {
 
             using (var ms = new MemoryStream(data))
                 return (IPacket)NSSerializer.Deserialize(ms);
+        }
+
+        internal IdentifiedPacket UnpackIdentified(byte[] data) {
+            IdentifiedPacket ret;
+            using (var ms = new MemoryStream(data)) {
+                NSSerializer.DeserializeDirect<IdentifiedPacket>(ms, out ret);
+            }
+            return ret;
         }
 
         internal byte[] PackArray(object[] arr, PackConfig cfg) {

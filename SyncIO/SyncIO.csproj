@@ -52,8 +52,9 @@
     <Compile Include="Network\SyncIOSocket.cs" />
     <Compile Include="Network\SyncIOConnectedClient.cs" />
     <Compile Include="Server\ClientManager.cs" />
+    <Compile Include="Server\ServerUDPSocket.cs" />
     <Compile Include="Server\SyncIOServer.cs" />
-    <Compile Include="Server\TcpServerSocket.cs" />
+    <Compile Include="Server\BaseServerSocket.cs" />
     <Compile Include="Transport\Encryption\Defaults\SyncIOEncryptionRSA.cs" />
     <Compile Include="Transport\PacketDefragmenter.cs" />
     <Compile Include="Transport\Packets\Internal\HandshakePacket.cs" />

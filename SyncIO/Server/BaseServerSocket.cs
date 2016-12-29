@@ -10,33 +10,33 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SyncIO.Server {
-    internal delegate void OnTCPSocketException(TcpServerSocket sender, Exception e);
-    internal delegate void OnTCPSocketClose(TcpServerSocket sender);
+
+    internal delegate void OnTCPSocketClose(BaseServerSocket sender);
 
     /// <summary>
     /// Internal TCP server socket.
     /// </summary>
-    internal class TcpServerSocket : SyncIOSocket {
+    internal class BaseServerSocket : SyncIOSocket {
 
         public event OnTCPSocketClose OnClose;
-        public event Action<TcpServerSocket, Socket> OnClientConnect;
+        public event Action<BaseServerSocket, Socket> OnClientConnect;
+        public event Action<byte[]> UdpDataReceved;
 
         public TransportProtocal Protocal { get; }
         public bool Binded => (NetworkSocket?.IsBound ?? false) && SuccessfulBind;
        
-
         private AsyncCallback InternalAcceptHandler;
         private Socket NetworkSocket;
         private bool SuccessfulBind = false;
-        private SyncIOServer parent;
+        private ServerUDPSocket UdpSock;
 
-        public TcpServerSocket(TransportProtocal _protocal, SyncIOServer _parent) {
+        public BaseServerSocket(TransportProtocal _protocal) {
             Protocal = _protocal;
             InternalAcceptHandler = new AsyncCallback(HandleAccept);
-            parent = _parent;
         }
 
-        public TcpServerSocket(SyncIOServer _parent) :this(TransportProtocal.IPv4, _parent) {
+        public BaseServerSocket() :this(TransportProtocal.IPv4) {
+
         }
 
         /// <summary>
@@ -91,6 +91,15 @@ namespace SyncIO.Server {
                 NetworkSocket = null;
                 SuccessfulBind = false;
             }
+        }
+
+        public override SyncIOSocket TryOpenUDPConnection() {
+
+            UdpSock?.Dispose();
+            UdpSock = new Server.ServerUDPSocket(Protocal, UdpDataReceved);
+            HasUDP = UdpSock.TryReceve(EndPoint);
+
+            return this;
         }
     }
 }
