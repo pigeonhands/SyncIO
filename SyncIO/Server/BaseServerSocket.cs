@@ -10,33 +10,33 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SyncIO.Server {
-    internal delegate void OnTCPSocketException(TcpServerSocket sender, Exception e);
-    internal delegate void OnTCPSocketClose(TcpServerSocket sender);
+
+    internal delegate void OnTCPSocketClose(BaseServerSocket sender);
 
     /// <summary>
-    /// Internal socket used for both client and server.
+    /// Internal TCP server socket.
     /// </summary>
-    internal class TcpServerSocket : SyncIOSocket {
+    internal class BaseServerSocket : SyncIOSocket {
 
-        public event OnTCPSocketException OnException;
         public event OnTCPSocketClose OnClose;
-        public event Action<TcpServerSocket, Socket> OnClientConnect;
+        public event Action<BaseServerSocket, Socket> OnClientConnect;
+        public event Action<byte[]> UdpDataReceved;
 
         public TransportProtocal Protocal { get; }
         public bool Binded => (NetworkSocket?.IsBound ?? false) && SuccessfulBind;
        
-
         private AsyncCallback InternalAcceptHandler;
         private Socket NetworkSocket;
         private bool SuccessfulBind = false;
-       
+        private ServerUDPSocket UdpSock;
 
-        public TcpServerSocket(TransportProtocal _protocal) {
+        public BaseServerSocket(TransportProtocal _protocal) {
             Protocal = _protocal;
             InternalAcceptHandler = new AsyncCallback(HandleAccept);
         }
 
-        public TcpServerSocket() :this(TransportProtocal.IPv4) {
+        public BaseServerSocket() :this(TransportProtocal.IPv4) {
+
         }
 
         /// <summary>
@@ -50,32 +50,6 @@ namespace SyncIO.Server {
             else
                 NetworkSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             SetTcpKeepAlive(NetworkSocket);
-        }
-
-        public bool Connect(string host, int port) {
-            CreateNewSocket();
-            try {
-                NetworkSocket.Connect(host, port);
-                SuccessfulBind = true;
-                EndPoint = (IPEndPoint)NetworkSocket.RemoteEndPoint;
-            } catch(Exception ex) {
-                SuccessfulBind = false;
-                OnException?.Invoke(this, ex);
-            }
-            return SuccessfulBind;
-        }
-
-        public bool Connect(EndPoint endpoint) {
-            CreateNewSocket();
-            try {
-                NetworkSocket.Connect(endpoint);
-                SuccessfulBind = true;
-                EndPoint = (IPEndPoint)NetworkSocket.RemoteEndPoint;
-            } catch(Exception ex) {
-                SuccessfulBind = false;
-                OnException?.Invoke(this, ex);
-            }
-            return SuccessfulBind;
         }
 
         public bool BeginAccept (EndPoint ep) {
@@ -117,6 +91,15 @@ namespace SyncIO.Server {
                 NetworkSocket = null;
                 SuccessfulBind = false;
             }
+        }
+
+        public override SyncIOSocket TryOpenUDPConnection() {
+
+            UdpSock?.Dispose();
+            UdpSock = new Server.ServerUDPSocket(Protocal, UdpDataReceved);
+            HasUDP = UdpSock.TryReceve(EndPoint);
+
+            return this;
         }
     }
 }

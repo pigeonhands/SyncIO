@@ -14,5 +14,6 @@ namespace SyncIO.Transport.Packets.Internal {
             Success = _success;
             ID = _id;
         }
+
     }
 }

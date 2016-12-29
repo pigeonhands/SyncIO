@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\SyncIOClient.cs" />
+    <Compile Include="Client\ClientUDPSocket.cs" />
     <Compile Include="Network\Callbacks\CallbackManager.cs" />
     <Compile Include="Network\Callbacks\QueuedPacket.cs" />
     <Compile Include="Network\ISyncIOClient.cs" />
@@ -50,13 +51,16 @@
     <Compile Include="Network\Callbacks\PacketCallback.cs" />
     <Compile Include="Network\SyncIOSocket.cs" />
     <Compile Include="Network\SyncIOConnectedClient.cs" />
+    <Compile Include="Server\ClientManager.cs" />
+    <Compile Include="Server\ServerUDPSocket.cs" />
     <Compile Include="Server\SyncIOServer.cs" />
-    <Compile Include="Server\TcpServerSocket.cs" />
+    <Compile Include="Server\BaseServerSocket.cs" />
     <Compile Include="Transport\Encryption\Defaults\SyncIOEncryptionRSA.cs" />
     <Compile Include="Transport\PacketDefragmenter.cs" />
     <Compile Include="Transport\Packets\Internal\HandshakePacket.cs" />
     <Compile Include="Transport\Packets\Internal\IdentifiedPacket.cs" />
     <Compile Include="Transport\Packets\Internal\ObjectArrayPacket.cs" />
+    <Compile Include="Transport\Packets\Internal\UdpHandshake.cs" />
     <Compile Include="Transport\Packets\IPacket.cs" />
     <Compile Include="Transport\Encryption\Defaults\SyncIOEncryptionRijndael.cs" />
     <Compile Include="Transport\Encryption\ISyncIOEncryption.cs" />

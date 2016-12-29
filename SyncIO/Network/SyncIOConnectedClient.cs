@@ -27,6 +27,12 @@ namespace SyncIO.Network {
         public Guid ID { get; protected set; }
 
         /// <summary>
+        /// General tag data
+        /// not used internaly by SyncIO.
+        /// </summary>
+        public object Tag { get; set; }
+
+        /// <summary>
         /// Underlying socket connection for the client
         /// </summary>
         protected Socket NetworkSocket { get; set; }

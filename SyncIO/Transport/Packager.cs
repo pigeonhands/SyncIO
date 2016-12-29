@@ -20,6 +20,7 @@ namespace SyncIO.Transport {
                     typeof(HandshakePacket),
                     typeof(ObjectArrayPacket),
                     typeof(IdentifiedPacket),
+                    typeof(UdpHandshake),
                    
                     typeof(Guid),
                     typeof(Guid[]),
@@ -110,12 +111,17 @@ namespace SyncIO.Transport {
             }
         }
 
-        internal byte[] Pack(Guid ID, IPacket p, PackConfig cfg) {
+        /// <summary>
+        /// Boxes p into a IdentifiedPacket object then packs.
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="p"></param>
+        /// <param name="cfg"></param>
+        /// <returns></returns>
+        internal byte[] Pack(Guid ID, IPacket p) {
             using (var ms = new MemoryStream()) {
                 NSSerializer.SerializeDirect<IdentifiedPacket>(ms, new IdentifiedPacket(ID, p));
                 var data = ms.ToArray();
-                if (cfg != null)
-                    data = cfg.PostPacking(data);
                 return data;
             }
         }
@@ -132,6 +138,14 @@ namespace SyncIO.Transport {
 
             using (var ms = new MemoryStream(data))
                 return (IPacket)NSSerializer.Deserialize(ms);
+        }
+
+        internal IdentifiedPacket UnpackIdentified(byte[] data) {
+            IdentifiedPacket ret;
+            using (var ms = new MemoryStream(data)) {
+                NSSerializer.DeserializeDirect<IdentifiedPacket>(ms, out ret);
+            }
+            return ret;
         }
 
         internal byte[] PackArray(object[] arr, PackConfig cfg) {

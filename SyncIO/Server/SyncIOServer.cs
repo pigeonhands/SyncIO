@@ -1,24 +1,21 @@
 ﻿using SyncIO.Network;
 using SyncIO.Network.Callbacks;
-using SyncIO.Server;
 using SyncIO.Transport;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Net.Sockets;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Collections;
 
-namespace SyncIO.Server{
+namespace SyncIO.Server {
     public delegate void OnClientConnectDelegate(SyncIOServer sender, SyncIOConnectedClient client);
     public class SyncIOServer : IEnumerable<SyncIOSocket>{
         public event OnClientConnectDelegate OnClientConnect;
         public TransportProtocal Protocal { get; }
+
+        public ClientManager Clients { get; private set; }
 
         private Packager Packager;
         private CallbackManager<SyncIOConnectedClient> Callbacks;
@@ -29,6 +26,7 @@ namespace SyncIO.Server{
             Protocal = _protocal;
             Packager = _packager;
             Callbacks = new CallbackManager<SyncIOConnectedClient>();
+            Clients = new ClientManager();
         }
 
         public SyncIOServer() : this(TransportProtocal.IPv4, new Packager()) {
@@ -40,26 +38,57 @@ namespace SyncIO.Server{
         /// <param name="port">Port to listen</param>
         /// <returns>The open socket on success, else null.</returns>
         public SyncIOSocket ListenTCP(int port) {
-            var tcpSock = new TcpServerSocket(Protocal);
-            tcpSock.OnClientConnect += TcpSock_OnClientConnect;
-            if (!tcpSock.BeginAccept(port))
+            var baseSock = new BaseServerSocket(Protocal);
+            baseSock.OnClientConnect += TcpSock_OnClientConnect;
+            if (!baseSock.BeginAccept(port))
                 return null;
 
-            OpenSockets.Add(tcpSock);
-            tcpSock.OnClose += (s) => {
+            OpenSockets.Add(baseSock);
+            baseSock.OnClose += (s) => {
                 OpenSockets.Remove(s);
             };
-           
-            return tcpSock;
+
+            baseSock.UdpDataReceved += HandleUDPData;
+
+            return baseSock;
         }
 
-        private void TcpSock_OnClientConnect(TcpServerSocket sender, Socket s) {
+        private void HandleUDPData(byte[] data) {
+            try {
+                var p = Packager.UnpackIdentified(data);
+
+                var client = Clients[p.ID] as InternalSyncIOConnectedClient;
+                if (client != null) {
+
+                    if(p.Packet is UdpHandshake) {
+                        client.Send(p.Packet);
+                    }else {
+                        ReceveHandler(client, p.Packet);
+                    }
+
+                }
+                    
+
+            } catch {
+                //Failed UDP accept.
+            }
+        }
+
+        private void TcpSock_OnClientConnect(BaseServerSocket sender, Socket s) {
             var client = new InternalSyncIOConnectedClient(s, Packager);
+
             client.SetID(GuidGenerator());
             client.BeginReceve(ReceveHandler);
             client.Send((cl) => {
+
+                Clients.Add(cl);
+                client.OnDisconnect += (c, err) => {
+                    Clients.Remove(c);
+                };
+
                 OnClientConnect?.Invoke(this, cl);//Trigger event after handshake packet has been sent.
             }, new HandshakePacket(true, client.ID));
+            
         }
 
         private void ReceveHandler(InternalSyncIOConnectedClient client, IPacket data) {
