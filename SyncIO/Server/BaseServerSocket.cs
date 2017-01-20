@@ -11,14 +11,11 @@ using System.Threading.Tasks;
 
 namespace SyncIO.Server {
 
-    internal delegate void OnTCPSocketClose(BaseServerSocket sender);
-
     /// <summary>
     /// Internal TCP server socket.
     /// </summary>
     internal class BaseServerSocket : SyncIOSocket {
 
-        public event OnTCPSocketClose OnSocketClose;
         public event Action<BaseServerSocket, Socket> OnClientConnect;
         public event Action<byte[]> UdpDataReceved;
 
@@ -85,7 +82,6 @@ namespace SyncIO.Server {
         }
 
         protected override void Close() {
-            OnSocketClose?.Invoke(this);
             if (Binded) {
                 NetworkSocket.Dispose();
                 NetworkSocket = null;
