@@ -12,6 +12,8 @@ using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
 using System.Threading;
 using SyncIO.Transport.Encryption;
+using SyncIO.Client.RemoteCalls;
+using SyncIO.Transport.RemoteCalls;
 
 namespace SyncIO.Client {
 
@@ -31,6 +33,7 @@ namespace SyncIO.Client {
         public bool Connected => ID != Guid.Empty;
 
         private CallbackManager<SyncIOClient> Callbacks;
+        private RemoteFunctionManager RemoteFunctions;
         private InternalSyncIOConnectedClient Connection;
         private Packager Packager;
         private bool HandshakeComplete;
@@ -42,6 +45,7 @@ namespace SyncIO.Client {
             Protocal = _protocal;
             Packager = _packager;
             Callbacks = new CallbackManager<SyncIOClient>();
+            RemoteFunctions = new RemoteFunctionManager();
 
             Callbacks.SetHandler<HandshakePacket>((c, p) => {
                 HandshakeComplete = p.Success;
@@ -50,6 +54,11 @@ namespace SyncIO.Client {
                 HandshakeEvent?.Dispose();
                 HandshakeEvent = null;
                 OnHandshake?.Invoke(this, ID, HandshakeComplete);
+                Callbacks.RemoveHandler<HandshakePacket>();
+            });
+
+            Callbacks.SetHandler<RemoteCallResponce>((c, p) => {
+                RemoteFunctions.RaiseFunction(p);
             });
         }
 
@@ -229,7 +238,7 @@ namespace SyncIO.Client {
             HandshakeEvent = new ManualResetEvent(false); //Reuse same event. We are connected so it cant be being used.
 
             if (UdpClient == null)
-                UdpClient = new Client.ClientUDPSocket(this, Packager);
+                UdpClient = new ClientUDPSocket(this, Packager);
 
             Callbacks.SetHandler<UdpHandshake>((c, p) => {
                 HasUDP = p.Success;
@@ -241,6 +250,11 @@ namespace SyncIO.Client {
 
             SendUDPHandshake();
             return this;
+        }
+
+
+        public RemoteFunction<T> GetRemoteFunction<T>(string name) {
+            return RemoteFunctions.RegisterFunction<T>(this, name);
         }
     }
 
