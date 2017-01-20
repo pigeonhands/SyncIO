@@ -3,6 +3,7 @@ using SyncIO.Network;
 using SyncIO.Server;
 using SyncIO.Transport;
 using SyncIO.Transport.Packets;
+using SyncIO.Transport.RemoteCalls;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -86,10 +87,27 @@ namespace SyncIO_ChatExample {
                 connected = false;
             };
 
+            var GetTime = client.GetRemoteFunction<string>("GetTime");
+            var toggletime = client.GetRemoteFunction<string>("toggletime");
+
             while (connected) {
                 var msg = ConsoleExtentions.GetNonEmptyString("");
-                if (connected)
-                    client.Send(new ChatMessage(msg));
+
+                if (msg == "time") {
+
+                    //Call a function that requires authentication checking.
+                    GetTime.CallWait(); //If call failed, return will be the default value for the type
+                    if(GetTime.LastStatus == FunctionResponceStatus.Success) { //No issues
+                        Console.WriteLine(GetTime.LastValue); //Write last returned value to console
+                    }else {
+                        Console.WriteLine("Call failed. reason: {0}. Try the \"toggletime\" command", GetTime.LastStatus);
+                    }
+                }else if (msg == "toggletime") {
+                    Console.WriteLine(toggletime.CallWait()); //If call fails, nothing (null) will be printed because it is strings default value.
+                } else {
+                    if (connected)
+                        client.Send(new ChatMessage(msg));
+                }
             }
             ConsoleExtentions.ErrorAndClose("Lost connection to server");
         }
@@ -112,12 +130,31 @@ namespace SyncIO_ChatExample {
                     c.Connection.Send(p);
             });
 
+
+            var gettime = server.RegisterRemoteFunction("GetTime", new Func<string> (() => {
+                Console.WriteLine("Time function called");
+                return string.Format("It is {0}.", DateTime.Now.ToShortTimeString());
+            }));
+
+            gettime.SetAuthFunc((c, f) => {
+                return clients[c.ID].CanUseTimeCommand;
+            });
+
+            var toggletime = server.RegisterRemoteFunction("toggletime", new Func<string>(() => "\"time\" command has been toggled."));
+            toggletime.SetAuthFunc((c, f) => {
+                clients[c.ID].CanUseTimeCommand = !clients[c.ID].CanUseTimeCommand;
+                return true;
+            });
+
             server.OnClientConnect += (SyncIOServer sender, SyncIOConnectedClient client) => {
                 Console.WriteLine("{0}] New connection", client.ID);
+                client.OnDisconnect += (c, ex) => {
+                    Console.WriteLine("[{0}] Disconnected: {1}", c.ID, ex.Message);
+                };
             };
 
             server.SetHandler<SetName>((c, p) => {
-                sendToAll(new ChatMessage($"{p.Name} connected."));
+                sendToAll(new ChatMessage($"{p.Name} connected. ({c.ID})"));
                 clients.Add(c.ID, new ConnectedChatClient(c, p.Name));
             });
 
@@ -170,6 +207,7 @@ namespace SyncIO_ChatExample {
         class ConnectedChatClient {
             public SyncIOConnectedClient Connection { get; }
             public string Name { get; }
+            public bool CanUseTimeCommand { get; set; }
             public ConnectedChatClient(SyncIOConnectedClient _conn, string _name) {
                 Connection = _conn;
                 Name = _name;

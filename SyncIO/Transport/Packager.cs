@@ -24,6 +24,8 @@ namespace SyncIO.Transport {
                     typeof(IdentifiedPacket),
                     typeof(UdpHandshake),
                     typeof(RemoteFunctionInfomation),
+                    typeof(RemoteCallRequest),
+                    typeof(RemoteCallResponce),
                    
                     typeof(Guid),
                     typeof(Guid[]),

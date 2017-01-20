@@ -43,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client\RemoteCalls\RemoteFunction.cs" />
+    <Compile Include="Client\RemoteCalls\RemoteFunctionManager.cs" />
     <Compile Include="Client\SyncIOClient.cs" />
     <Compile Include="Client\ClientUDPSocket.cs" />
     <Compile Include="Network\Callbacks\CallbackManager.cs" />

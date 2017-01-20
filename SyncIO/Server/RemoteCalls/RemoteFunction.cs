@@ -32,20 +32,17 @@ namespace SyncIO.Server.RemoteCalls {
             AuthCallback = callback;
         }
 
-        internal RemoteCallResponce Invoke(SyncIOConnectedClient client, object[] param) {
-            var responce = new RemoteCallResponce();
-
+        internal void Invoke(SyncIOConnectedClient client, RemoteCallResponce resp, object[] param) { //Fix this shit
             try {
                 if(AuthCallback?.Invoke(client, this) ?? true) {
-                    responce.Return = FuctionCall.DynamicInvoke(param);
-                    responce.Reponce = FunctionResponceStatus.Success;
+                    resp.Return = FuctionCall.DynamicInvoke(param);
+                    resp.Reponce = FunctionResponceStatus.Success;
                 } else {
-                    responce.Reponce = FunctionResponceStatus.PermissionDenied;
+                    resp.Reponce = FunctionResponceStatus.PermissionDenied;
                 }
             }catch {
-                responce.Reponce = FunctionResponceStatus.ExceptionThrown;
+                resp.Reponce = FunctionResponceStatus.ExceptionThrown;
             }
-            return responce;
         }
 
         public bool ValidParameter(int index, uint id) {

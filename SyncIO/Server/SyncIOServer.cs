@@ -32,7 +32,7 @@ namespace SyncIO.Server {
             Clients = new ClientManager();
             RemoteFuncs = new RemoteCallServerManager(Packager);
 
-            SetHandler<RemoteCallRequest>((cl, att) => RemoteFuncs.HandleClientFunctionCall(cl, att.Name, att.Args));
+            SetHandler<RemoteCallRequest>((cl, att) => RemoteFuncs.HandleClientFunctionCall(cl, att));
         }
 
         public SyncIOServer() : this(TransportProtocal.IPv4, new Packager()) {
@@ -50,7 +50,7 @@ namespace SyncIO.Server {
                 return null;
 
             OpenSockets.Add(baseSock);
-            baseSock.OnClose += (s) => {
+            baseSock.OnSocketClose += (s) => {
                 OpenSockets.Remove(s);
             };
 
@@ -146,6 +146,10 @@ namespace SyncIO.Server {
         /// <returns></returns>
         public RemoteFunction RegisterRemoteFunction(string name, Delegate func) {
             return RemoteFuncs.BindRemoteCall(name, func);
+        }
+
+        public void SetDefaultRemoteFunctionAuthCallback(RemoteFunctionCallAuth _DefaultAuthCallback) {
+            RemoteFuncs.SetDefaultAuthCallback(_DefaultAuthCallback);
         }
 
         public SyncIOSocket this[int port] {

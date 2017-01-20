@@ -61,28 +61,30 @@ namespace SyncIO.Server.RemoteCalls {
             return remoteFunc;
         }
 
-        public void HandleClientFunctionCall(SyncIOConnectedClient client, string name, object[] args) {
+        public void HandleClientFunctionCall(SyncIOConnectedClient client, RemoteCallRequest reqst) {
             lock (SyncLock) {
-                if (FunctionLookup.ContainsKey(name)) {
-                    var func = FunctionLookup[name];
 
-                    for(int i = 0; i < args.Length; i++) {
-                        var argType = args[i].GetType();
-                        if(BindableTypes.ContainsKey(argType) && func.ValidParameter(i, BindableTypes[argType])) {
-                            client.Send(new RemoteCallResponce() {
-                                Reponce = FunctionResponceStatus.InvalidParameters
-                            });
-                        }else {
-                            var funcRet = func.Invoke(client, args);
-                            client.Send(funcRet);
+                var respPacket = new RemoteCallResponce(reqst.CallID, reqst.Name);
+
+                if (FunctionLookup.ContainsKey(reqst.Name)) {
+                    var func = FunctionLookup[reqst.Name];
+
+                    for(int i = 0; i < reqst.Args.Length; i++) {
+                        var argType = reqst.Args[i].GetType();
+                        if(!BindableTypes.ContainsKey(argType) || !func.ValidParameter(i, BindableTypes[argType])) {
+                            respPacket.Reponce = FunctionResponceStatus.InvalidParameters;
+                            client.Send(respPacket);
+                            return;
                         }
                     }
 
-                }else {
-                    client.Send(new RemoteCallResponce() {
-                        Reponce = FunctionResponceStatus.DoesNotExist
-                    });
+                    func.Invoke(client, respPacket, reqst.Args);
+
+                } else {
+                    respPacket.Reponce = FunctionResponceStatus.DoesNotExist;
                 }
+
+                client.Send(respPacket);
             }
         }
 
