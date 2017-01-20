@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Client\RemoteCalls\RemoteFunction.cs" />
     <Compile Include="Client\SyncIOClient.cs" />
     <Compile Include="Client\ClientUDPSocket.cs" />
     <Compile Include="Network\Callbacks\CallbackManager.cs" />
@@ -52,6 +53,8 @@
     <Compile Include="Network\SyncIOSocket.cs" />
     <Compile Include="Network\SyncIOConnectedClient.cs" />
     <Compile Include="Server\ClientManager.cs" />
+    <Compile Include="Server\RemoteCalls\RemoteCallServerManager.cs" />
+    <Compile Include="Server\RemoteCalls\RemoteFunction.cs" />
     <Compile Include="Server\ServerUDPSocket.cs" />
     <Compile Include="Server\SyncIOServer.cs" />
     <Compile Include="Server\BaseServerSocket.cs" />
@@ -82,6 +85,9 @@
     <Compile Include="Transport\NetSerializer\TypeSerializers\PrimitivesSerializer.cs" />
     <Compile Include="Transport\Packager.cs" />
     <Compile Include="Transport\PackConfig.cs" />
+    <Compile Include="Transport\RemoteCalls\RemoteCallRequest.cs" />
+    <Compile Include="Transport\RemoteCalls\RemoteCallResponce.cs" />
+    <Compile Include="Transport\RemoteCalls\RemoteFunctionInfomation.cs" />
     <Compile Include="Transport\TransportProtocal.cs" />
   </ItemGroup>
   <ItemGroup>

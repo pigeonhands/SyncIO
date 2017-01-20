@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Collections;
+using SyncIO.Server.RemoteCalls;
+using SyncIO.Transport.RemoteCalls;
 
 namespace SyncIO.Server {
     public delegate void OnClientConnectDelegate(SyncIOServer sender, SyncIOConnectedClient client);
@@ -19,6 +21,7 @@ namespace SyncIO.Server {
 
         private Packager Packager;
         private CallbackManager<SyncIOConnectedClient> Callbacks;
+        private RemoteCallServerManager RemoteFuncs;
         private Func<Guid> GuidGenerator = () => Guid.NewGuid();
         private List<SyncIOSocket> OpenSockets = new List<SyncIOSocket>();
 
@@ -27,6 +30,9 @@ namespace SyncIO.Server {
             Packager = _packager;
             Callbacks = new CallbackManager<SyncIOConnectedClient>();
             Clients = new ClientManager();
+            RemoteFuncs = new RemoteCallServerManager(Packager);
+
+            SetHandler<RemoteCallRequest>((cl, att) => RemoteFuncs.HandleClientFunctionCall(cl, att.Name, att.Args));
         }
 
         public SyncIOServer() : this(TransportProtocal.IPv4, new Packager()) {
@@ -130,6 +136,16 @@ namespace SyncIO.Server {
         /// <param name="callback"></param>
         public void SetHandler(Action<SyncIOConnectedClient, IPacket> callback) {
             Callbacks.SetPacketHandler(callback);
+        }
+
+        /// <summary>
+        /// Makes a function callable to clients
+        /// </summary>
+        /// <param name="name">Function name</param>
+        /// <param name="func">function to call</param>
+        /// <returns></returns>
+        public RemoteFunction RegisterRemoteFunction(string name, Delegate func) {
+            return RemoteFuncs.BindRemoteCall(name, func);
         }
 
         public SyncIOSocket this[int port] {
