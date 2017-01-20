@@ -144,7 +144,7 @@ namespace SyncIO.Server {
         /// <param name="name">Function name</param>
         /// <param name="func">function to call</param>
         /// <returns></returns>
-        public RemoteFunction RegisterRemoteFunction(string name, Delegate func) {
+        public RemoteFunctionBind RegisterRemoteFunction(string name, Delegate func) {
             return RemoteFuncs.BindRemoteCall(name, func);
         }
 

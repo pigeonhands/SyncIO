@@ -1,6 +1,8 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using SyncIO.Client;
+using SyncIO.Network;
 using SyncIO.Server;
+using SyncIO.Server.RemoteCalls;
 using SyncIO.Transport.RemoteCalls;
 using System;
 using System.Collections.Generic;
@@ -18,9 +20,13 @@ namespace SyncIOTests {
             var client = new SyncIOClient();
             var server = new SyncIOServer();
 
-            server.RegisterRemoteFunction("Test1", new Func<string, int>((string string1) => string1.Length));
+            var Test1 = server.RegisterRemoteFunction("Test1", new Func<string, int>((string string1) => string1.Length));
             server.RegisterRemoteFunction("Test2", new Func<string, string>((string string1) => string.Concat(string1.Reverse())));
             server.RegisterRemoteFunction("Test3", new Func<string, char>((string string1) => string1.FirstOrDefault()));
+
+            Test1.SetAuthFunc((SyncIOConnectedClient requester, RemoteFunctionBind callingFunc) => { //Example of authenticating call to Test1
+                return true; //Always allow call
+            });
 
             var listenSock = server.ListenTCP(6000);
             Assert.IsNotNull(listenSock);
