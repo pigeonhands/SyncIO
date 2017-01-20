@@ -55,7 +55,7 @@
     <Compile Include="Network\SyncIOConnectedClient.cs" />
     <Compile Include="Server\ClientManager.cs" />
     <Compile Include="Server\RemoteCalls\RemoteCallServerManager.cs" />
-    <Compile Include="Server\RemoteCalls\RemoteFunction.cs" />
+    <Compile Include="Server\RemoteCalls\RemoteFunctionBind.cs" />
     <Compile Include="Server\ServerUDPSocket.cs" />
     <Compile Include="Server\SyncIOServer.cs" />
     <Compile Include="Server\BaseServerSocket.cs" />
