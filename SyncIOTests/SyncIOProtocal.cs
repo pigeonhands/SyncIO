@@ -15,19 +15,19 @@ namespace SyncIOTests {
 
         [TestMethod]
         public void TestUDP() {
-            var done = new ManualResetEvent(false);
+            var packets = 10;
 
             var client = new SyncIOClient();
             var server = new SyncIOServer();
 
-            Guid clientID = Guid.Empty;
+           
             object[] sent = new object[] { 1, 2, 3, "hello", "world" };
-            object[] receved = new object[0];
+            int receved = 0;
 
             server.SetHandler((SyncIOConnectedClient s, object[] data) => {
-                clientID = s.ID;
-                receved = data;
-                done.Set();
+                Assert.AreEqual(client.ID, s.ID);
+                CollectionAssert.AreEqual(sent, data);
+                receved++;
             });
 
             var sock = server.ListenTCP(55455);
@@ -41,11 +41,11 @@ namespace SyncIOTests {
             client.TryOpenUDPConnection();
             Assert.IsTrue(client.WaitForUDP());
 
-           client.SendUDP(sent);
-            done.WaitOne();
+            for (int i = 0; i < packets; i++)
+                client.SendUDP(sent);
+            Thread.Sleep(3000); //Wait 3 secodns
 
-            Assert.AreEqual(client.ID, clientID);
-            CollectionAssert.AreEqual(sent, receved);
+            Assert.AreEqual(packets, receved);
         }
 
 

@@ -22,7 +22,7 @@ namespace SyncIO.Server {
         private Packager Packager;
         private CallbackManager<SyncIOConnectedClient> Callbacks;
         private RemoteCallServerManager RemoteFuncs;
-        private Func<Guid> GuidGenerator = () => Guid.NewGuid();
+        private Func<Guid> GuidGenerator = Guid.NewGuid;
         private List<SyncIOSocket> OpenSockets = new List<SyncIOSocket>();
 
         public SyncIOServer(TransportProtocal _protocal, Packager _packager) {
@@ -50,7 +50,7 @@ namespace SyncIO.Server {
                 return null;
 
             OpenSockets.Add(baseSock);
-            baseSock.OnSocketClose += (s) => {
+            baseSock.OnClose += (s, err) => {
                 OpenSockets.Remove(s);
             };
 
