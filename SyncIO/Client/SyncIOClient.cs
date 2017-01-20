@@ -12,11 +12,14 @@ using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
 using System.Threading;
 using SyncIO.Transport.Encryption;
+using SyncIO.Client.RemoteCalls;
+using SyncIO.Transport.RemoteCalls;
 
 namespace SyncIO.Client {
 
     public delegate void OnHandshakeDelegate(SyncIOClient sender, Guid id, bool success);
     public delegate void OnDisconnectDelegate(SyncIOClient sender, Exception ex);
+
     public class SyncIOClient : SyncIOSocket, ISyncIOClient {
 
         public event OnHandshakeDelegate OnHandshake;
@@ -30,15 +33,19 @@ namespace SyncIO.Client {
         public bool Connected => ID != Guid.Empty;
 
         private CallbackManager<SyncIOClient> Callbacks;
+        private RemoteFunctionManager RemoteFunctions;
         private InternalSyncIOConnectedClient Connection;
         private Packager Packager;
         private bool HandshakeComplete;
         private ManualResetEvent HandshakeEvent = new ManualResetEvent(false);
+        private ClientUDPSocket UdpClient;
+        private TimeSpan HandshakeTimeout = TimeSpan.FromSeconds(15);
 
         public SyncIOClient(TransportProtocal _protocal, Packager _packager) {
             Protocal = _protocal;
             Packager = _packager;
             Callbacks = new CallbackManager<SyncIOClient>();
+            RemoteFunctions = new RemoteFunctionManager();
 
             Callbacks.SetHandler<HandshakePacket>((c, p) => {
                 HandshakeComplete = p.Success;
@@ -47,6 +54,11 @@ namespace SyncIO.Client {
                 HandshakeEvent?.Dispose();
                 HandshakeEvent = null;
                 OnHandshake?.Invoke(this, ID, HandshakeComplete);
+                Callbacks.RemoveHandler<HandshakePacket>();
+            });
+
+            Callbacks.SetHandler<RemoteCallResponce>((c, p) => {
+                RemoteFunctions.RaiseFunction(p);
             });
         }
 
@@ -57,6 +69,8 @@ namespace SyncIO.Client {
         /// Possably add support for connecting to multiple servers.
         /// </summary>
         private Socket NewSocket() {
+            Connection?.Disconnect(null);
+            Connection = null;
             if (Protocal == TransportProtocal.IPv6)
                 return new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
             else
@@ -146,6 +160,18 @@ namespace SyncIO.Client {
         }
 
 
+        public void SendUDP(IPacket p) {
+            if (HasUDP) {
+                UdpClient.Send(p);
+            }
+        }
+
+        public void SendUDP(object[] p) {
+            if (HasUDP) {
+                UdpClient.Send(p);
+            }
+        }
+
         /// <summary>
         /// Sets the encryption for traffic.
         /// </summary>
@@ -168,9 +194,67 @@ namespace SyncIO.Client {
             if (Connected)
                 return true;
 
-            HandshakeEvent?.WaitOne(TimeSpan.FromSeconds(30));
+            HandshakeEvent?.WaitOne(HandshakeTimeout);
 
             return Connected;
+        }
+
+        /// <summary>
+        /// Should be used to RE-CONFIRM udp connection. 
+        /// Will throw an exception if TryOpenUDPConnection is not called first.
+        /// HasUDP will also be set to FALSE after this call untill confirmation is receved from server.
+        /// </summary>
+        public void SendUDPHandshake() { //Send handshake packet regardless if alredy confirmed
+            HasUDP = false;
+            UdpClient.Send(new UdpHandshake());
+        }
+
+
+        /// <summary>
+        /// Blocks and waits for UDP.
+        /// </summary>
+        /// <returns></returns>
+        public bool WaitForUDP() {
+
+            if (UdpClient == null)
+                return false;
+
+            if (HasUDP)
+                return true;
+
+            HandshakeEvent?.WaitOne(HandshakeTimeout);
+
+            return HasUDP;
+        }
+
+        public override SyncIOSocket TryOpenUDPConnection() {
+
+            if (!Connected) 
+                throw new Exception("Must be connecteded and hanshake must be completed before opening UDP connection.");
+
+            if (HasUDP)
+                return this; //Alredy confirmed UDP.
+
+            HandshakeEvent = new ManualResetEvent(false); //Reuse same event. We are connected so it cant be being used.
+
+            if (UdpClient == null)
+                UdpClient = new ClientUDPSocket(this, Packager);
+
+            Callbacks.SetHandler<UdpHandshake>((c, p) => {
+                HasUDP = p.Success;
+
+                HandshakeEvent?.Set();
+                HandshakeEvent?.Dispose();
+                HandshakeEvent = null;
+            });
+
+            SendUDPHandshake();
+            return this;
+        }
+
+
+        public RemoteFunction<T> GetRemoteFunction<T>(string name) {
+            return RemoteFunctions.RegisterFunction<T>(this, name);
         }
     }
 

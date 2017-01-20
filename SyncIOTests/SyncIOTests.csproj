@@ -53,6 +53,8 @@
     <Compile Include="Network\CallbackManagerTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SyncIONetwork.cs" />
+    <Compile Include="SyncIOProtocal.cs" />
+    <Compile Include="SyncIORemoteCalls.cs" />
     <Compile Include="Transport\PackagerTesting.cs" />
     <Compile Include="Transport\PacketDefragmenterTests.cs" />
   </ItemGroup>

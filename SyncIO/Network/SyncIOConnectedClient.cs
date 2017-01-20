@@ -27,6 +27,12 @@ namespace SyncIO.Network {
         public Guid ID { get; protected set; }
 
         /// <summary>
+        /// General tag data
+        /// not used internaly by SyncIO.
+        /// </summary>
+        public object Tag { get; set; }
+
+        /// <summary>
         /// Underlying socket connection for the client
         /// </summary>
         protected Socket NetworkSocket { get; set; }
@@ -48,7 +54,7 @@ namespace SyncIO.Network {
         public virtual void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
         }
 
-        protected void Disconnect(Exception ex) {
+        public void Disconnect(Exception ex) {
             if(NetworkSocket != null) {
                 NetworkSocket.Shutdown(SocketShutdown.Both);
                 NetworkSocket.Dispose();

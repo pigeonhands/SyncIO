@@ -3,9 +3,11 @@ using SyncIO.Transport.Encryption;
 using SyncIO.Transport.Encryption.Defaults;
 using SyncIO.Transport.Packets;
 using SyncIO.Transport.Packets.Internal;
+using SyncIO.Transport.RemoteCalls;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 
 namespace SyncIO.Transport {
@@ -20,6 +22,10 @@ namespace SyncIO.Transport {
                     typeof(HandshakePacket),
                     typeof(ObjectArrayPacket),
                     typeof(IdentifiedPacket),
+                    typeof(UdpHandshake),
+                    typeof(RemoteFunctionInfomation),
+                    typeof(RemoteCallRequest),
+                    typeof(RemoteCallResponce),
                    
                     typeof(Guid),
                     typeof(Guid[]),
@@ -110,12 +116,17 @@ namespace SyncIO.Transport {
             }
         }
 
-        internal byte[] Pack(Guid ID, IPacket p, PackConfig cfg) {
+        /// <summary>
+        /// Boxes p into a IdentifiedPacket object then packs.
+        /// </summary>
+        /// <param name="ID"></param>
+        /// <param name="p"></param>
+        /// <param name="cfg"></param>
+        /// <returns></returns>
+        internal byte[] Pack(Guid ID, IPacket p) {
             using (var ms = new MemoryStream()) {
                 NSSerializer.SerializeDirect<IdentifiedPacket>(ms, new IdentifiedPacket(ID, p));
                 var data = ms.ToArray();
-                if (cfg != null)
-                    data = cfg.PostPacking(data);
                 return data;
             }
         }
@@ -134,6 +145,14 @@ namespace SyncIO.Transport {
                 return (IPacket)NSSerializer.Deserialize(ms);
         }
 
+        internal IdentifiedPacket UnpackIdentified(byte[] data) {
+            IdentifiedPacket ret;
+            using (var ms = new MemoryStream(data)) {
+                NSSerializer.DeserializeDirect<IdentifiedPacket>(ms, out ret);
+            }
+            return ret;
+        }
+
         internal byte[] PackArray(object[] arr, PackConfig cfg) {
             return Pack(new ObjectArrayPacket(arr), cfg);
         }
@@ -147,6 +166,14 @@ namespace SyncIO.Transport {
             if (key.Length != 16)
                 throw new ArgumentException("key needs to be 16 bytes long.", "key");
             return new SyncIOEncryptionRijndael(key);
+        }
+
+        /// <summary>
+        /// Gets the list of seralizable types
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<Type, uint> GetTypeDictionary() {
+            return NSSerializer.GetTypeMap();
         }
     }
 }

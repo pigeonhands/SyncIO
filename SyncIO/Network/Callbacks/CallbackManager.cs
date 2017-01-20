@@ -30,6 +30,18 @@ namespace SyncIO.Network.Callbacks {
         }
 
         /// <summary>
+        /// Removes the handler for the specified type
+        /// </summary>
+        /// <typeparam name="T">type to remove the handler</typeparam>
+        public void RemoveHandler<T>() {
+            lock (CallbackLock) {
+                var fType = typeof(T);
+                if (PacketCallbacks.ContainsKey(fType))
+                    PacketCallbacks.Remove(fType);
+            }
+        }
+
+        /// <summary>
         /// Add handler for IPacket type receve
         /// </summary>
         /// <typeparam name="T"></typeparam>
