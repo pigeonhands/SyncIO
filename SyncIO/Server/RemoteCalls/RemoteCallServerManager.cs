@@ -62,30 +62,34 @@ namespace SyncIO.Server.RemoteCalls {
         }
 
         public void HandleClientFunctionCall(SyncIOConnectedClient client, RemoteCallRequest reqst) {
+
+            var respPacket = new RemoteCallResponce(reqst.CallID, reqst.Name);
+
+            RemoteFunctionBind func = null;
             lock (SyncLock) {
-
-                var respPacket = new RemoteCallResponce(reqst.CallID, reqst.Name);
-
                 if (FunctionLookup.ContainsKey(reqst.Name)) {
-                    var func = FunctionLookup[reqst.Name];
-
-                    for(int i = 0; i < reqst.Args.Length; i++) {
-                        var argType = reqst.Args[i].GetType();
-                        if(!BindableTypes.ContainsKey(argType) || !func.ValidParameter(i, BindableTypes[argType])) {
-                            respPacket.Reponce = FunctionResponceStatus.InvalidParameters;
-                            client.Send(respPacket);
-                            return;
-                        }
-                    }
-
-                    func.Invoke(client, respPacket, reqst.Args);
-
+                    func= FunctionLookup[reqst.Name];
                 } else {
                     respPacket.Reponce = FunctionResponceStatus.DoesNotExist;
                 }
 
+             }
+
+            if(func == null) {
                 client.Send(respPacket);
+                return;
             }
+
+            for (int i = 0; i < reqst.Args.Length; i++) {
+                var argType = reqst.Args[i].GetType();
+                if (!BindableTypes.ContainsKey(argType) || !func.ValidParameter(i, BindableTypes[argType])) {
+                    respPacket.Reponce = FunctionResponceStatus.InvalidParameters;
+                    client.Send(respPacket);
+                    return;
+                }
+            }
+
+            func.Invoke(client, respPacket, reqst.Args);
         }
 
     }
