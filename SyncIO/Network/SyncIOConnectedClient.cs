@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
@@ -31,6 +32,11 @@ namespace SyncIO.Network {
         /// not used internaly by SyncIO.
         /// </summary>
         public object Tag { get; set; }
+
+        /// <summary>
+        /// Remote EndPoint of client
+        /// </summary>
+        public IPEndPoint EndPoint => (IPEndPoint)NetworkSocket.RemoteEndPoint;
 
         /// <summary>
         /// Underlying socket connection for the client
