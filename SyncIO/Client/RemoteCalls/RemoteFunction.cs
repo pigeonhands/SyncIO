@@ -61,7 +61,7 @@ namespace SyncIO.Client.RemoteCalls {
 
                 CallID = _callID;
                 RaiseReturn(ReturnValue, CallID);
-                Monitor.Pulse(SyncLock);
+                Monitor.PulseAll(SyncLock);
             }
         }
 

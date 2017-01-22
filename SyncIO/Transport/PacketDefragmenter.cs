@@ -84,7 +84,7 @@ namespace SyncIO.Transport {
             if(ReceveStream == null) {
                 PacketSizeCounter += (byte)bytes;
                 if (PacketSizeCounter > 4)
-                    throw new Exception("receved more tnhan 4 bytes for packet header.");
+                    throw new Exception("receved more than 4 bytes for packet header.");
 
                 if(PacketSizeCounter == 4) {
                    

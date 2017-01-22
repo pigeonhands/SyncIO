@@ -10,8 +10,15 @@ using System.Threading.Tasks;
 namespace SyncIO.Server.RemoteCalls {
     public delegate bool RemoteFunctionCallAuth(SyncIOConnectedClient client, RemoteFunctionBind func);
     public class RemoteFunctionBind {
-
+        /// <summary>
+        /// Name of the remote function
+        /// </summary>
         public string Name => FunctionInfo.Name;
+
+        /// <summary>
+        /// Tag data not used internaly by SyncIO.
+        /// </summary>
+        public object Tag { get; set; }
 
         private RemoteFunctionInfomation FunctionInfo;
         private RemoteFunctionCallAuth AuthCallback;
