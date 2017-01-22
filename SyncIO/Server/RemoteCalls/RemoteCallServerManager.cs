@@ -11,7 +11,7 @@ namespace SyncIO.Server.RemoteCalls {
     internal class RemoteCallServerManager {
 
         private Dictionary<Type, uint> BindableTypes;
-        private Dictionary<string, RemoteFunction> FunctionLookup = new Dictionary<string, RemoteFunction>();
+        private Dictionary<string, RemoteFunctionBind> FunctionLookup = new Dictionary<string, RemoteFunctionBind>();
         private RemoteFunctionCallAuth DefaultAuthCallback;
         private object SyncLock = new object();
 
@@ -33,7 +33,7 @@ namespace SyncIO.Server.RemoteCalls {
         /// <param name="name">Name of the function to be caled by</param>
         /// <param name="a">Function to bind</param>
         /// <returns>Function infomation</returns>
-        public RemoteFunction BindRemoteCall(string name, Delegate a) {
+        public RemoteFunctionBind BindRemoteCall(string name, Delegate a) {
 
             if (FunctionLookup.ContainsKey(name))
                 throw new Exception("Function with the same name alredy exists");
@@ -55,7 +55,7 @@ namespace SyncIO.Server.RemoteCalls {
                 funcInfo.Parameters[i] = BindableTypes[t];
             }
 
-            var remoteFunc = new RemoteFunction(funcInfo, a);
+            var remoteFunc = new RemoteFunctionBind(funcInfo, a);
             remoteFunc.SetAuthFunc(DefaultAuthCallback);
             FunctionLookup.Add(name, remoteFunc);
             return remoteFunc;
