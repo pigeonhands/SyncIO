@@ -199,6 +199,8 @@ namespace SyncIO.Network {
 
             byte[] packet = Defragger.Process(bytes);
 
+            ReceveWithDefragger();
+
             if (packet != null) {
                 try {
                     IPacket pack = Packager.Unpack(packet, PackagingConfiguration);
@@ -209,7 +211,6 @@ namespace SyncIO.Network {
                 }
             }
 
-            ReceveWithDefragger();
         }
 
         public void SetID(Guid _id) {
