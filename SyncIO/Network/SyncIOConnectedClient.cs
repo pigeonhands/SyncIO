@@ -198,6 +198,7 @@ namespace SyncIO.Network {
             }
 
             byte[] packet = Defragger.Process(bytes);
+
             if (packet != null) {
                 try {
                     IPacket pack = Packager.Unpack(packet, PackagingConfiguration);
