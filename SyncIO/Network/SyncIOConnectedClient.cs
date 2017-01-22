@@ -65,8 +65,8 @@ namespace SyncIO.Network {
                 NetworkSocket.Shutdown(SocketShutdown.Both);
                 NetworkSocket.Dispose();
                 NetworkSocket = null;
+                OnDisconnect?.Invoke(this, ex);
             }
-            OnDisconnect?.Invoke(this, ex);
         }
 
         /// <summary>
@@ -150,9 +150,9 @@ namespace SyncIO.Network {
             }
 
             if(packet != null && packet.Data != null) {
-                SocketError SE;
+                SocketError SE = SocketError.SocketError;
 
-                NetworkSocket.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out SE);
+                NetworkSocket?.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out SE);
 
                 if (SE != SocketError.Success) {
                     Disconnect(new SocketException());
@@ -189,8 +189,8 @@ namespace SyncIO.Network {
         }
 
         private void InternalReceve(IAsyncResult AR) {
-            SocketError SE;
-            int bytes = NetworkSocket.EndReceive(AR, out SE);
+            SocketError SE = SocketError.SocketError;
+            int bytes = NetworkSocket?.EndReceive(AR, out SE) ?? 0;
 
             if (SE != SocketError.Success) {
                 Disconnect(new SocketException());
