@@ -34,7 +34,7 @@ namespace SyncIO.Client.RemoteCalls {
             }
         }
 
-        public void RaiseFunction(RemoteCallResponce resp) {
+        public void RaiseFunction(RemoteCallResponse resp) {
             lock (SyncLock) {
                 if (FunctionList.ContainsKey(resp.Name)) {
                     var f = FunctionList[resp.Name];

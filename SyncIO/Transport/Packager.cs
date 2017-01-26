@@ -25,7 +25,7 @@ namespace SyncIO.Transport {
                     typeof(UdpHandshake),
                     typeof(RemoteFunctionInfomation),
                     typeof(RemoteCallRequest),
-                    typeof(RemoteCallResponce),
+                    typeof(RemoteCallResponse),
                    
                     typeof(Guid),
                     typeof(Guid[]),

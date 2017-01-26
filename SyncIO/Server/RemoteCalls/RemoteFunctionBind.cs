@@ -39,7 +39,7 @@ namespace SyncIO.Server.RemoteCalls {
             AuthCallback = callback;
         }
 
-        internal void Invoke(SyncIOConnectedClient client, RemoteCallResponce resp, object[] param) { //Fix this shit
+        internal void Invoke(SyncIOConnectedClient client, RemoteCallResponse resp, object[] param) { //Fix this shit
             try {
                 if(AuthCallback?.Invoke(client, this) ?? true) {
                     resp.Return = FuctionCall.DynamicInvoke(param);

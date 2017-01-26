@@ -87,7 +87,7 @@
     <Compile Include="Transport\Packager.cs" />
     <Compile Include="Transport\PackConfig.cs" />
     <Compile Include="Transport\RemoteCalls\RemoteCallRequest.cs" />
-    <Compile Include="Transport\RemoteCalls\RemoteCallResponce.cs" />
+    <Compile Include="Transport\RemoteCalls\RemoteCallResponse.cs" />
     <Compile Include="Transport\RemoteCalls\RemoteFunctionInfomation.cs" />
     <Compile Include="Transport\TransportProtocal.cs" />
   </ItemGroup>

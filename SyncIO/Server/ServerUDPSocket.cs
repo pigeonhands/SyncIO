@@ -42,6 +42,11 @@ namespace SyncIO.Server {
             NetworkSocket.BeginReceiveFrom(receveBuffer, 0, receveBuffer.Length, SocketFlags.None, ref clientEP, internalReceve, null);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="ep"></param>
+        /// <returns></returns>
         public bool TryReceve(IPEndPoint ep) {
             NewSocket();
             try {

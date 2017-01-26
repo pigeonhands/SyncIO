@@ -57,7 +57,7 @@ namespace SyncIO.Client {
                 Callbacks.RemoveHandler<HandshakePacket>();
             });
 
-            Callbacks.SetHandler<RemoteCallResponce>((c, p) => {
+            Callbacks.SetHandler<RemoteCallResponse>((c, p) => {
                 RemoteFunctions.RaiseFunction(p);
             });
         }

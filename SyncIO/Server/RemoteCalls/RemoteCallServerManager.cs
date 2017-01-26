@@ -65,7 +65,7 @@ namespace SyncIO.Server.RemoteCalls {
 
             lock (SyncLock) {
 
-                var respPacket = new RemoteCallResponce(reqst.CallID, reqst.Name);
+                var respPacket = new RemoteCallResponse(reqst.CallID, reqst.Name);
 
                 if (FunctionLookup.ContainsKey(reqst.Name)) {
                     var func = FunctionLookup[reqst.Name];
