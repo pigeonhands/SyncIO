@@ -6,54 +6,52 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-
 namespace NetSerializer
 {
-	sealed class PrimitivesSerializer : IStaticTypeSerializer
-	{
-		static Type[] s_primitives = new Type[] {
-				typeof(bool),
-				typeof(byte), typeof(sbyte),
-				typeof(char),
-				typeof(ushort), typeof(short),
-				typeof(uint), typeof(int),
-				typeof(ulong), typeof(long),
-				typeof(float), typeof(double),
-				typeof(string),
-				typeof(DateTime),
-				typeof(byte[]),
-				typeof(Decimal),
-			};
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Reflection;
 
-		public bool Handles(Type type)
-		{
-			return s_primitives.Contains(type);
-		}
+    sealed class PrimitivesSerializer : IStaticTypeSerializer
+    {
+        static readonly Type[] _primitives = {
+                typeof(bool),
+                typeof(byte), typeof(sbyte),
+                typeof(char),
+                typeof(ushort), typeof(short),
+                typeof(uint), typeof(int),
+                typeof(ulong), typeof(long),
+                typeof(float), typeof(double),
+                typeof(string),
+                typeof(DateTime),
+                typeof(byte[]),
+                typeof(Decimal),
+            };
 
-		public IEnumerable<Type> GetSubtypes(Type type)
-		{
-			return new Type[0];
-		}
+        public bool Handles(Type type)
+        {
+            return _primitives.Contains(type);
+        }
 
-		public MethodInfo GetStaticWriter(Type type)
-		{
-			return Primitives.GetWritePrimitive(type);
-		}
+        public IEnumerable<Type> GetSubtypes(Type type)
+        {
+            return new Type[0];
+        }
 
-		public MethodInfo GetStaticReader(Type type)
-		{
-			return Primitives.GetReaderPrimitive(type);
-		}
+        public MethodInfo GetStaticWriter(Type type)
+        {
+            return Primitives.GetWritePrimitive(type);
+        }
 
-		public static IEnumerable<Type> GetSupportedTypes()
-		{
-			return s_primitives;
-		}
-	}
+        public MethodInfo GetStaticReader(Type type)
+        {
+            return Primitives.GetReaderPrimitive(type);
+        }
+
+        public static IEnumerable<Type> GetSupportedTypes()
+        {
+            return _primitives;
+        }
+    }
 }

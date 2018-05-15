@@ -6,78 +6,77 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-
 namespace NetSerializer
 {
-	sealed class ObjectSerializer : IStaticTypeSerializer
-	{
-		public bool Handles(Type type)
-		{
-			return type == typeof(object);
-		}
+    using System;
+    using System.Collections.Generic;
+    using System.IO;
+    using System.Reflection;
 
-		public IEnumerable<Type> GetSubtypes(Type type)
-		{
-			return new Type[0];
-		}
+    sealed class ObjectSerializer : IStaticTypeSerializer
+    {
+        public bool Handles(Type type)
+        {
+            return type == typeof(object);
+        }
 
-		public MethodInfo GetStaticWriter(Type type)
-		{
-			return typeof(ObjectSerializer).GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
-		}
+        public IEnumerable<Type> GetSubtypes(Type type)
+        {
+            return new Type[0];
+        }
 
-		public MethodInfo GetStaticReader(Type type)
-		{
-			return typeof(ObjectSerializer).GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
-		}
+        public MethodInfo GetStaticWriter(Type type)
+        {
+            return typeof(ObjectSerializer).GetMethod("Serialize", BindingFlags.Static | BindingFlags.Public);
+        }
 
-		public static void Serialize(Serializer serializer, Stream stream, object ob)
-		{
-			if (ob == null)
-			{
-				Primitives.WritePrimitive(stream, (uint)0);
-				return;
-			}
+        public MethodInfo GetStaticReader(Type type)
+        {
+            return typeof(ObjectSerializer).GetMethod("Deserialize", BindingFlags.Static | BindingFlags.Public);
+        }
 
-			var type = ob.GetType();
+        public static void Serialize(Serializer serializer, Stream stream, object ob)
+        {
+            if (ob == null)
+            {
+                Primitives.WritePrimitive(stream, (uint)0);
+                return;
+            }
 
-			SerializeDelegate<object> del;
+            var type = ob.GetType();
 
-			uint id = serializer.GetTypeIdAndSerializer(type, out del);
+            SerializeDelegate<object> del;
 
-			Primitives.WritePrimitive(stream, id);
+            uint id = serializer.GetTypeIdAndSerializer(type, out del);
 
-			if (id == Serializer.ObjectTypeId)
-				return;
+            Primitives.WritePrimitive(stream, id);
 
-			del(serializer, stream, ob);
-		}
+            if (id == Serializer.ObjectTypeId)
+                return;
 
-		public static void Deserialize(Serializer serializer, Stream stream, out object ob)
-		{
-			uint id;
+            del(serializer, stream, ob);
+        }
 
-			Primitives.ReadPrimitive(stream, out id);
+        public static void Deserialize(Serializer serializer, Stream stream, out object ob)
+        {
+            uint id;
 
-			if (id == 0)
-			{
-				ob = null;
-				return;
-			}
+            Primitives.ReadPrimitive(stream, out id);
 
-			if (id == Serializer.ObjectTypeId)
-			{
-				ob = new object();
-				return;
-			}
+            if (id == 0)
+            {
+                ob = null;
+                return;
+            }
 
-			var del = serializer.GetDeserializeTrampolineFromId(id);
-			del(serializer, stream, out ob);
-		}
-	}
+            if (id == Serializer.ObjectTypeId)
+            {
+                ob = new object();
+                return;
+            }
+
+            var del = serializer.GetDeserializeTrampolineFromId(id);
+            del(serializer, stream, out ob);
+        }
+    }
 }

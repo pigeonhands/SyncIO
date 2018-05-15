@@ -1,17 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Transport.Packets.Internal
+{
+    using System;
 
-namespace SyncIO.Transport.Packets.Internal {
     [Serializable]
-    internal class IdentifiedPacket : IPacket { //Primaraly for UDP
-        public Guid ID { get; set; }
+    internal class IdentifiedPacket : IPacket //Primaraly for UDP
+    {
+        public Guid Id { get; set; }
+
         public IPacket Packet { get; set; }
-        public IdentifiedPacket(Guid _id, IPacket _packet) {
-            ID = _id;
-            Packet = _packet;
+
+        public IdentifiedPacket(Guid id, IPacket packet)
+        {
+            Id = id;
+            Packet = packet;
         }
     }
 }

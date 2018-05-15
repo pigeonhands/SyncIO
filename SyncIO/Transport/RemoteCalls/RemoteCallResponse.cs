@@ -1,26 +1,29 @@
-﻿using SyncIO.Transport.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Transport.RemoteCalls
+{
+    using System;
 
-namespace SyncIO.Transport.RemoteCalls {
+    using SyncIO.Transport.Packets;
+
     [Serializable]
-    internal class RemoteCallResponse : IPacket {
+    internal class RemoteCallResponse : IPacket
+    {
         public string Name { get; set; } //replace names with IDs
-        public FunctionResponceStatus Reponce { get; set; }
-        public object Return { get; set; }
-        public Guid CallID { get; set; }
 
-        public RemoteCallResponse(Guid _callId, string _name) {
-            CallID = _callId;
-            Name = _name;
+        public FunctionResponseStatus Response { get; set; }
+
+        public object Return { get; set; }
+
+        public Guid CallId { get; set; }
+
+        public RemoteCallResponse(Guid callId, string name)
+        {
+            CallId = callId;
+            Name = name;
         }
     }
 
-
-    public enum FunctionResponceStatus : byte {
+    public enum FunctionResponseStatus : byte
+    {
         Success,
         PermissionDenied,
         ExceptionThrown,

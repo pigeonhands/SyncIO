@@ -1,36 +1,47 @@
-﻿using System.Security.Cryptography;
+﻿namespace SyncIO.Transport.Encryption.Defaults
+{
+    using System;
+    using System.Security.Cryptography;
 
-namespace SyncIO.Transport.Encryption.Defaults {
-    public class SyncIOEncryptionRijndael : ISyncIOEncryption {
-        private Rijndael RijObject;
-        private ICryptoTransform Encryptor;
-        private ICryptoTransform Decryptor;
-        public SyncIOEncryptionRijndael(byte[] _key)  {
-            RijObject = new RijndaelManaged();
-            RijObject.Key = _key;
-            RijObject.IV = _key;
-            Encryptor = RijObject.CreateEncryptor();
-            Decryptor = RijObject.CreateDecryptor();
+    public class SyncIOEncryptionRijndael : ISyncIOEncryption
+    {
+        private readonly Rijndael _rijObj;
+        private readonly ICryptoTransform _encryptor;
+        private readonly ICryptoTransform _decryptor;
+
+        public SyncIOEncryptionRijndael(byte[] key)
+        {
+            _rijObj = new RijndaelManaged
+            {
+                Key = key,
+                IV = key
+            };
+            _encryptor = _rijObj.CreateEncryptor();
+            _decryptor = _rijObj.CreateDecryptor();
         }
 
-        public SyncIOEncryptionRijndael(Rijndael _RijObject) {
-            RijObject = _RijObject;
-            Encryptor = RijObject.CreateEncryptor();
-            Decryptor = RijObject.CreateDecryptor();
+        public SyncIOEncryptionRijndael(Rijndael rijObject)
+        {
+            _rijObj = rijObject;
+            _encryptor = _rijObj.CreateEncryptor();
+            _decryptor = _rijObj.CreateDecryptor();
         }
 
-        public byte[] Decrypt(byte[] data) {
-            return Decryptor.TransformFinalBlock(data, 0, data.Length);
+        public byte[] Decrypt(byte[] data)
+        {
+            return _decryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
-        public byte[] Encrypt(byte[] data) {
-            return Encryptor.TransformFinalBlock(data, 0, data.Length);
+        public byte[] Encrypt(byte[] data)
+        {
+            return _encryptor.TransformFinalBlock(data, 0, data.Length);
         }
 
-        public void Dispose() {
-            Encryptor.Dispose();
-            Decryptor.Dispose();
-            RijObject.Dispose();
+        public void Dispose()
+        {
+            _encryptor.Dispose();
+            _decryptor.Dispose();
+            _rijObj.Dispose();
         }
     }
 }

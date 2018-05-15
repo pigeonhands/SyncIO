@@ -1,40 +1,43 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Transport.Encryption.Defaults
+{
+    using System;
+    using System.Security.Cryptography;
 
-namespace SyncIO.Transport.Encryption.Defaults {
-    public class SyncIOEncryptionRSA : ISyncIOEncryption {
+    public class SyncIOEncryptionRSA : ISyncIOEncryption
+    {
+        private readonly RSACryptoServiceProvider _rsaObj;
+
         public byte[] PublicKey { get; }
 
-        private RSACryptoServiceProvider RSAObj;
-
-        public SyncIOEncryptionRSA() {
-            RSAObj = new RSACryptoServiceProvider();
-            PublicKey = RSAObj.ExportCspBlob(false);
+        public SyncIOEncryptionRSA()
+        {
+            _rsaObj = new RSACryptoServiceProvider();
+            PublicKey = _rsaObj.ExportCspBlob(false);
         }
 
         /// <summary>
         /// Encrypt only.
         /// </summary>
-        /// <param name="_PublicKey">Pubic key for encryption</param>
-        public SyncIOEncryptionRSA(byte[] _PublicKey) {
-            RSAObj = new RSACryptoServiceProvider();
-            RSAObj.ImportCspBlob(_PublicKey);
+        /// <param name="publicKey">Pubic key for encryption</param>
+        public SyncIOEncryptionRSA(byte[] publicKey)
+        {
+            _rsaObj = new RSACryptoServiceProvider();
+            _rsaObj.ImportCspBlob(publicKey);
         }
 
-        public byte[] Encrypt(byte[] data) {
-            return RSAObj.Encrypt(data, false);
+        public byte[] Encrypt(byte[] data)
+        {
+            return _rsaObj.Encrypt(data, false);
         }
 
-        public byte[] Decrypt(byte[] data) {
-            return RSAObj.Decrypt(data, false);
+        public byte[] Decrypt(byte[] data)
+        {
+            return _rsaObj.Decrypt(data, false);
         }
 
-        public void Dispose() {
-            RSAObj.Dispose();
+        public void Dispose()
+        {
+            _rsaObj.Dispose();
         }
     }
 }

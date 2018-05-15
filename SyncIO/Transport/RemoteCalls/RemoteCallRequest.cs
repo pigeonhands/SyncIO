@@ -1,15 +1,16 @@
-﻿using SyncIO.Transport.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Transport.RemoteCalls
+{
+    using System;
 
-namespace SyncIO.Transport.RemoteCalls {
+    using SyncIO.Transport.Packets;
+
     [Serializable]
-    internal class RemoteCallRequest : IPacket {
+    internal class RemoteCallRequest : IPacket
+    {
         public string Name { get; set; }
+
         public object[] Args { get; set; }
-        public Guid CallID { get; set; }
+
+        public Guid CallId { get; set; }
     }
 }

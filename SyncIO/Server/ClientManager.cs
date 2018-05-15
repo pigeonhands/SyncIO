@@ -1,61 +1,67 @@
-﻿using SyncIO.Network;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Collections;
+﻿namespace SyncIO.Server
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Collections;
 
-namespace SyncIO.Server {
-    public class ClientManager : IEnumerable<SyncIOConnectedClient> {
+    using SyncIO.Network;
+
+    public class ClientManager : IEnumerable<SyncIOConnectedClient>
+    {
+        private readonly Dictionary<Guid, SyncIOConnectedClient> _clientList = new Dictionary<Guid, SyncIOConnectedClient>();
+        private readonly object _syncLock = new object();
 
 
-        private Dictionary<Guid, SyncIOConnectedClient> clientList = new Dictionary<Guid, SyncIOConnectedClient>();
-        private object SyncLock = new object();
-
-
-        internal void Add(SyncIOConnectedClient client) {
-            lock (SyncLock) {
-                if (clientList.ContainsKey(client.ID))
-                    clientList[client.ID] = client;
+        internal void Add(SyncIOConnectedClient client)
+        {
+            lock (_syncLock)
+            {
+                if (_clientList.ContainsKey(client.ID))
+                    _clientList[client.ID] = client;
                 else
-                    clientList.Add(client.ID, client);
+                    _clientList.Add(client.ID, client);
             }
         }
 
-        internal void Remove(SyncIOConnectedClient client) {
-            lock (SyncLock) {
-                if (clientList.ContainsKey(client.ID))
-                    clientList.Remove(client.ID);
+        internal void Remove(SyncIOConnectedClient client)
+        {
+            lock (_syncLock)
+            {
+                if (_clientList.ContainsKey(client.ID))
+                    _clientList.Remove(client.ID);
             }
         }
 
 
-        public SyncIOConnectedClient this[Guid id] {
-            get {
-                lock (SyncLock) {
-                    if (clientList.ContainsKey(id))
-                        return clientList[id];
+        public SyncIOConnectedClient this[Guid id]
+        {
+            get
+            {
+                lock (_syncLock)
+                {
+                    if (_clientList.ContainsKey(id))
+                        return _clientList[id];
                     else
                         return null;
                 }
             }
         }
 
-        public IEnumerator<SyncIOConnectedClient> GetEnumerator() {
-            lock (SyncLock) {
-                return clientList.Select(x => x.Value).GetEnumerator();
+        public IEnumerator<SyncIOConnectedClient> GetEnumerator()
+        {
+            lock (_syncLock)
+            {
+                return _clientList.Select(x => x.Value).GetEnumerator();
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator() {
-            lock (SyncLock) {
-                return clientList.Select(x => x.Value).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            lock (_syncLock)
+            {
+                return _clientList.Select(x => x.Value).GetEnumerator();
             }
         }
-
-       
-       
-
     }
 }

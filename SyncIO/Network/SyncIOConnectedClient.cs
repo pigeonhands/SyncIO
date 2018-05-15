@@ -1,26 +1,26 @@
-﻿using SyncIO.Network;
-using SyncIO.Network.Callbacks;
-using SyncIO.Transport;
-using SyncIO.Transport.Encryption;
-using SyncIO.Transport.Packets;
-using SyncIO.Transport.Packets.Internal;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Network
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Net.Sockets;
+    using System.Threading.Tasks;
 
-namespace SyncIO.Network {
+    using SyncIO.Network.Callbacks;
+    using SyncIO.Transport;
+    using SyncIO.Transport.Compression;
+    using SyncIO.Transport.Encryption;
+    using SyncIO.Transport.Packets;
+
     public delegate void OnClientDisconnectDelegate(SyncIOConnectedClient client, Exception ex);
 
     /// <summary>
     /// A client that is connected to a SyncIOServer
     /// Used from receving/sending from the SyncIOServer.
     /// </summary>
-    public abstract class SyncIOConnectedClient : ISyncIOClient {
+    public abstract class SyncIOConnectedClient : ISyncIOClient
+    {
         public event OnClientDisconnectDelegate OnDisconnect;
         /// <summary>
         /// Id of connected client.
@@ -46,22 +46,28 @@ namespace SyncIO.Network {
         internal PackConfig PackagingConfiguration { get; set; }
 
 
-        public void Send(params object[] data) {
+        public void Send(params object[] data)
+        {
             Send(null, data);
         }
 
-        public void Send(IPacket packet) {
+        public void Send(IPacket packet)
+        {
             Send(null, packet);
-        } 
-
-        public virtual void Send(Action<SyncIOConnectedClient> afterSend, params object[] data) {
         }
 
-        public virtual void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
+        public virtual void Send(Action<SyncIOConnectedClient> afterSend, params object[] data)
+        {
         }
 
-        public void Disconnect(Exception ex) {
-            if(NetworkSocket != null) {
+        public virtual void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet)
+        {
+        }
+
+        public void Disconnect(Exception ex)
+        {
+            if (NetworkSocket != null)
+            {
                 NetworkSocket.Shutdown(SocketShutdown.Both);
                 NetworkSocket.Dispose();
                 NetworkSocket = null;
@@ -73,26 +79,32 @@ namespace SyncIO.Network {
         /// Sets the encryption for traffic.
         /// </summary>
         /// <param name="encryption">Encryption to use.</param>
-        public void SetEncryption(ISyncIOEncryption encryption) {
+        public void SetEncryption(ISyncIOEncryption encryption)
+        {
             if (PackagingConfiguration == null)
                 PackagingConfiguration = new PackConfig();
 
             PackagingConfiguration.Encryption = encryption;
+        }
+
+        public void SetCompression(ISyncIOCompression compression)
+        {
+            if (PackagingConfiguration == null)
+                PackagingConfiguration = new PackConfig();
+
+            PackagingConfiguration.Compression = compression;
         }
     }
 
     /// <summary>
     /// Used to create SyncIOConnectedClient objects. 
     /// </summary>
-    internal class InternalSyncIOConnectedClient : SyncIOConnectedClient {
-
-       
-        public Packager Packager { get; }
-
+    internal class InternalSyncIOConnectedClient : SyncIOConnectedClient
+    {
         /// <summary>
         /// Multithread sync object
         /// </summary>
-        private object SyncLock = new object();
+        private readonly object SyncLock = new object();
 
         /// <summary>
         /// Send queue for client
@@ -107,26 +119,30 @@ namespace SyncIO.Network {
 
         private Action<InternalSyncIOConnectedClient, IPacket> ReceveCallback;
 
-        public InternalSyncIOConnectedClient(Socket s, Packager p, int bufferSize) {
-           if (s == null)
-                throw new Exception("Socket not valid.");
+        public Packager Packager { get; }
 
-            NetworkSocket = s;
+
+        public InternalSyncIOConnectedClient(Socket s, Packager p) 
+            : this(s, p, 1024 * 5)
+        {
+        }
+
+        public InternalSyncIOConnectedClient(Socket s, Packager p, int bufferSize)
+        {
+            NetworkSocket = s ?? throw new Exception("Socket not valid.");
             Packager = p;
             Defragger = new PacketDefragmenter(bufferSize);
         }
 
-        public InternalSyncIOConnectedClient(Socket s, Packager p) : this(s, p, 1024 * 5) {
+        public override void Send(Action<SyncIOConnectedClient> afterSend, params object[] data)
+        {
+            var rawData = Packager.PackArray(data, PackagingConfiguration);
+            HandleRawBytes(rawData, afterSend);
         }
 
-
-        public override void Send(Action<SyncIOConnectedClient> afterSend, object[] arr) {
-            byte[] data = Packager.PackArray(arr, PackagingConfiguration);
-            HandleRawBytes(data, afterSend);
-        }
-
-        public override void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet) {
-            byte[] data = Packager.Pack(packet);
+        public override void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet)
+        {
+            var data = Packager.Pack(packet, PackagingConfiguration);
             HandleRawBytes(data, afterSend);
         }
 
@@ -134,38 +150,45 @@ namespace SyncIO.Network {
         /// Assigns a prefix to the data and adds ti to the send queue.
         /// </summary>
         /// <param name="data">Data to send</param>
-        private void HandleRawBytes(byte[] data, Action<SyncIOConnectedClient> afterSend) {
-            byte[] packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();//Appending length prefix to packet
-            lock (SyncLock) {
+        private void HandleRawBytes(byte[] data, Action<SyncIOConnectedClient> afterSend)
+        {
+            var packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();//Appending length prefix to packet
+            lock (SyncLock)
+            {
                 SendQueue.Enqueue(new QueuedPacket(packet, afterSend));
                 Task.Factory.StartNew(HandleSendQueue);
             }
         }
 
-        private void HandleSendQueue() {
+        private void HandleSendQueue()
+        {
             QueuedPacket packet = null;
 
-            lock (SyncLock) {
+            lock (SyncLock)
+            {
                 packet = SendQueue.Dequeue();
             }
 
-            if(packet != null && packet.Data != null) {
-                SocketError SE = SocketError.SocketError;
+            if (packet != null && packet.Data != null)
+            {
+                var se = SocketError.SocketError;
 
-                NetworkSocket?.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out SE);
+                NetworkSocket?.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out se);
 
-                if (SE != SocketError.Success) {
+                if (se != SocketError.Success)
+                {
                     Disconnect(new SocketException());
                     return;
-                }else {
+                }
+                else
+                {
                     packet.HasBeenSent(this);
                 }
             }
         }
 
-       
-
-        public void BeginReceve(Action<InternalSyncIOConnectedClient, IPacket> callback) {
+        public void BeginReceve(Action<InternalSyncIOConnectedClient, IPacket> callback)
+        {
 
             if (ReceveCallback != null)
                 throw new Exception("Alredy listening.");
@@ -174,48 +197,53 @@ namespace SyncIO.Network {
             if (ReceveCallback == null)
                 throw new Exception("Invalid callback");
 
-            ReceveWithDefragger();
+            ReceiveWithDefragger();
         }
 
         /// <summary>
         /// Uses defagger to receve packets.
         /// </summary>
-         private void ReceveWithDefragger() {
-            SocketError SE;
-            NetworkSocket.BeginReceive(Defragger.ReceveBuffer, Defragger.BufferIndex, Defragger.BytesToReceve, SocketFlags.None, out SE, InternalReceve, null);
+        private void ReceiveWithDefragger()
+        {
+            NetworkSocket.BeginReceive(Defragger.ReceveBuffer, Defragger.BufferIndex, Defragger.BytesToReceve, SocketFlags.None, out SocketError SE, InternalReceve, null);
 
             if (SE != SocketError.Success)
                 Disconnect(new SocketException());
         }
 
-        private void InternalReceve(IAsyncResult AR) {
-            SocketError SE = SocketError.SocketError;
-            int bytes = NetworkSocket?.EndReceive(AR, out SE) ?? 0;
+        private void InternalReceve(IAsyncResult at)
+        {
+            var se = SocketError.SocketError;
+            var bytes = NetworkSocket?.EndReceive(at, out se) ?? 0;
 
-            if (SE != SocketError.Success) {
+            if (se != SocketError.Success)
+            {
                 Disconnect(new SocketException());
                 return;
             }
 
-            byte[] packet = Defragger.Process(bytes);
+            var packet = Defragger.Process(bytes);
 
-            ReceveWithDefragger();
+            ReceiveWithDefragger();
 
-            if (packet != null) {
-                try {
-                    IPacket pack = Packager.Unpack(packet, PackagingConfiguration);
+            if (packet != null)
+            {
+                try
+                {
+                    var pack = Packager.Unpack(packet, PackagingConfiguration);
                     ReceveCallback(this, pack);
-                } catch (Exception ex){
+                }
+                catch (Exception ex)
+                {
                     Disconnect(ex);
                     return;
                 }
             }
-
         }
 
-        public void SetID(Guid _id) {
-            ID = _id;
+        public void SetID(Guid id)
+        {
+            ID = id;
         }
-
     }
 }

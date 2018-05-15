@@ -1,105 +1,16 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C3FAB64B-A089-4E7A-8B94-FF7AE532986A}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SyncIO</RootNamespace>
-    <AssemblyName>SyncIO</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="System.Reflection.Emit.ILGeneration" Version="4.3.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Client\RemoteCalls\RemoteFunction.cs" />
-    <Compile Include="Client\RemoteCalls\RemoteFunctionManager.cs" />
-    <Compile Include="Client\SyncIOClient.cs" />
-    <Compile Include="Client\ClientUDPSocket.cs" />
-    <Compile Include="Network\Callbacks\CallbackManager.cs" />
-    <Compile Include="Network\Callbacks\QueuedPacket.cs" />
-    <Compile Include="Network\ISyncIOClient.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Network\Callbacks\PacketCallback.cs" />
-    <Compile Include="Network\SyncIOSocket.cs" />
-    <Compile Include="Network\SyncIOConnectedClient.cs" />
-    <Compile Include="Server\ClientManager.cs" />
-    <Compile Include="Server\RemoteCalls\RemoteCallServerManager.cs" />
-    <Compile Include="Server\RemoteCalls\RemoteFunctionBind.cs" />
-    <Compile Include="Server\ServerUDPSocket.cs" />
-    <Compile Include="Server\SyncIOServer.cs" />
-    <Compile Include="Server\BaseServerSocket.cs" />
-    <Compile Include="Transport\Encryption\Defaults\SyncIOEncryptionRSA.cs" />
-    <Compile Include="Transport\PacketDefragmenter.cs" />
-    <Compile Include="Transport\Packets\Internal\HandshakePacket.cs" />
-    <Compile Include="Transport\Packets\Internal\IdentifiedPacket.cs" />
-    <Compile Include="Transport\Packets\Internal\ObjectArrayPacket.cs" />
-    <Compile Include="Transport\Packets\Internal\UdpHandshake.cs" />
-    <Compile Include="Transport\Packets\IPacket.cs" />
-    <Compile Include="Transport\Encryption\Defaults\SyncIOEncryptionRijndael.cs" />
-    <Compile Include="Transport\Encryption\ISyncIOEncryption.cs" />
-    <Compile Include="Transport\NetSerializer\Helpers.cs" />
-    <Compile Include="Transport\NetSerializer\ITypeSerializer.cs" />
-    <Compile Include="Transport\NetSerializer\Primitives.cs" />
-    <Compile Include="Transport\NetSerializer\Serializer.cs" />
-    <Compile Include="Transport\NetSerializer\Settings.cs" />
-    <Compile Include="Transport\NetSerializer\TypeData.cs" />
-    <Compile Include="Transport\NetSerializer\TypeDictionary.cs" />
-    <Compile Include="Transport\NetSerializer\TypeIDList.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\ArraySerializer.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\DictionarySerializer.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\EnumSerializer.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\GenericSerializer.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\NoOpSerializer.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\NullableSerializer.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\ObjectSerializer.cs" />
-    <Compile Include="Transport\NetSerializer\TypeSerializers\PrimitivesSerializer.cs" />
-    <Compile Include="Transport\Packager.cs" />
-    <Compile Include="Transport\PackConfig.cs" />
-    <Compile Include="Transport\RemoteCalls\RemoteCallRequest.cs" />
-    <Compile Include="Transport\RemoteCalls\RemoteCallResponse.cs" />
-    <Compile Include="Transport\RemoteCalls\RemoteFunctionInfomation.cs" />
-    <Compile Include="Transport\TransportProtocal.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Network\RemoteVariables\" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

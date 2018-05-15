@@ -1,45 +1,51 @@
-﻿using SyncIO.Client;
-using SyncIO.Network;
-using SyncIO.Transport;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Server
+{
+    using System;
+    using System.Net;
+    using System.Net.Sockets;
 
-namespace SyncIO.Server {
-    internal class ServerUDPSocket : SyncIOSocket {
+    using SyncIO.Network;
+    using SyncIO.Transport;
 
-        public TransportProtocal Protocal { get; private set; }
+    internal class ServerUdpSocket : SyncIOSocket
+    {
+        private Socket _networkSocket;
+        private byte[] _receiveBuffer = new byte[8192];
+        private readonly Action<byte[]> _udpDataReceved;
 
-        private Socket NetworkSocket;
-        private byte[] receveBuffer = new byte[8192];
-        private Action<byte[]> UdpDataReceved;
+        public TransportProtocol Protocol { get; private set; }
 
-        public ServerUDPSocket(TransportProtocal _protocal, Action< byte[]> callback) {
-            Protocal = _protocal;
-            UdpDataReceved = callback;
+        public EndPoint DefaultBroadcastEndPoint
+        {
+            get { return new IPEndPoint(IPAddress.Any, 0); }
         }
 
-        private void NewSocket() {
-            NetworkSocket?.Dispose();
-            if (Protocal == TransportProtocal.IPv6)
-                NetworkSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+        public ServerUdpSocket(TransportProtocol protocol, Action<byte[]> callback)
+        {
+            Protocol = protocol;
+            _udpDataReceved = callback;
+        }
+
+        private void NewSocket()
+        {
+            _networkSocket?.Dispose();
+            if (Protocol == TransportProtocol.IPv6)
+                _networkSocket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
             else
-                NetworkSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                _networkSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         }
 
-        private void internalReceve(IAsyncResult ar) {
-            EndPoint clientEP = new IPEndPoint(IPAddress.Any, 0);
-            var bytesRead = NetworkSocket.EndReceiveFrom(ar, ref clientEP);
+        private void InternalReceive(IAsyncResult ar)
+        {
+            var clientEP = DefaultBroadcastEndPoint;
+            var bytesRead = _networkSocket.EndReceiveFrom(ar, ref clientEP);
             var packet = new byte[bytesRead];
-            Buffer.BlockCopy(receveBuffer, 0, packet, 0, packet.Length);
 
-            UdpDataReceved?.Invoke(packet);
+            Buffer.BlockCopy(_receiveBuffer, 0, packet, 0, packet.Length);
 
-            NetworkSocket.BeginReceiveFrom(receveBuffer, 0, receveBuffer.Length, SocketFlags.None, ref clientEP, internalReceve, null);
+            _udpDataReceved?.Invoke(packet);
+
+            _networkSocket.BeginReceiveFrom(_receiveBuffer, 0, _receiveBuffer.Length, SocketFlags.None, ref clientEP, InternalReceive, null);
         }
 
         /// <summary>
@@ -47,25 +53,33 @@ namespace SyncIO.Server {
         /// </summary>
         /// <param name="ep"></param>
         /// <returns></returns>
-        public bool TryReceve(IPEndPoint ep) {
+        public bool TryReceve(IPEndPoint ep)
+        {
             NewSocket();
-            try {
+            try
+            {
                 var bindEP = new IPEndPoint(IPAddress.Any, ep.Port);
-                NetworkSocket.Bind(bindEP);
-            } catch {
-                NetworkSocket.Dispose();
-                NetworkSocket = null;
+                _networkSocket.Bind(bindEP);
+            }
+            catch
+            {
+                _networkSocket.Dispose();
+                _networkSocket = null;
                 return false;
             }
-            EndPoint newClientEndPoint = new IPEndPoint(IPAddress.Any, 0);
-            NetworkSocket.BeginReceiveFrom(receveBuffer, 0, receveBuffer.Length, SocketFlags.None, ref newClientEndPoint, internalReceve, null);
+
+            var newClientEndPoint = DefaultBroadcastEndPoint;
+            _networkSocket.BeginReceiveFrom(_receiveBuffer, 0, _receiveBuffer.Length, SocketFlags.None, ref newClientEndPoint, InternalReceive, null);
             return true;
         }
 
-        protected override void Close() {
-            NetworkSocket?.Dispose();
-            NetworkSocket = null;
+        protected override void Close()
+        {
+            if (_networkSocket != null)
+            {
+                _networkSocket?.Dispose();
+                _networkSocket = null;
+            }
         }
-
     }
 }

@@ -6,20 +6,24 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO.Transport {
+namespace SyncIO.Transport
+{
     /// <summary>
     /// Reconstructs a packet with the format:
     /// [4 byte data length header] [Data length specified by header]
     /// </summary>
-    internal class PacketDefragmenter {
+    internal class PacketDefragmenter
+    {
 
         /// <summary>
         /// Number of bytes to receve
         /// </summary>
         public int BytesToReceve => CalculateBytesToReceve(); //Naughty, i know.
 
-        private int CalculateBytesToReceve() {
-            if (ReceveStream == null) {
+        private int CalculateBytesToReceve()
+        {
+            if (ReceveStream == null)
+            {
                 //Reading a packet header
                 var read = 4 - PacketSizeCounter;
                 if (read < 1)
@@ -31,9 +35,12 @@ namespace SyncIO.Transport {
             if (neededBytes < 0)
                 throw new IndexOutOfRangeException("Need negative ammount of bytes to complete packet.");
 
-            if (neededBytes > ReceveBuffer.Length) {
+            if (neededBytes > ReceveBuffer.Length)
+            {
                 return ReceveBuffer.Length; //Need more than the curret buffer can handle, so just use the whole buffer.
-            } else {
+            }
+            else
+            {
                 return (int)neededBytes;    //Only need a protan of the current buffer to complete packet
             }
         }
@@ -43,7 +50,7 @@ namespace SyncIO.Transport {
         /// </summary>
         public int BufferIndex => PacketSizeCounter;
 
-       
+
 
         /// <summary>
         /// MemryStream for joining fragmented packet.
@@ -69,7 +76,8 @@ namespace SyncIO.Transport {
         public byte[] ReceveBuffer { get; set; }
 
 
-        public PacketDefragmenter(int bufferSize) {
+        public PacketDefragmenter(int bufferSize)
+        {
             if (bufferSize < 4)
                 throw new Exception("Buffer size must be at least 4 bytes");
             ReceveBuffer = new byte[bufferSize];
@@ -80,29 +88,37 @@ namespace SyncIO.Transport {
         /// </summary>
         /// <param name="bytes">Number of bytes to process</param>
         /// <returns>Returns the completed packet if ready, else null.</returns>
-        public byte[] Process(int bytes) {
-            if(ReceveStream == null) {
+        public byte[] Process(int bytes)
+        {
+            if (ReceveStream == null)
+            {
                 PacketSizeCounter += (byte)bytes;
                 if (PacketSizeCounter > 4)
                     throw new Exception("receved more than 4 bytes for packet header.");
 
-                if(PacketSizeCounter == 4) {
-                   
+                if (PacketSizeCounter == 4)
+                {
+
                     //Got packet header
                     PacketSizeCounter = 0;
                     CurrentPacketSize = BitConverter.ToInt32(ReceveBuffer, 0);
                     ReceveStream = new MemoryStream(CurrentPacketSize);
                 }
                 return null;
-            } else {
+            }
+            else
+            {
                 ReceveStream.Write(ReceveBuffer, 0, bytes);
-                if (ReceveStream.Position == CurrentPacketSize) {
+                if (ReceveStream.Position == CurrentPacketSize)
+                {
                     //Finished receving packet
                     byte[] packet = ReceveStream.ToArray();
                     ReceveStream.Dispose();
                     ReceveStream = null;
                     return packet;
-                }else {
+                }
+                else
+                {
                     return null;
                 }
             }

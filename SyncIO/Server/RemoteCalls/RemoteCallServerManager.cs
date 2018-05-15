@@ -7,15 +7,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SyncIO.Server.RemoteCalls {
-    internal class RemoteCallServerManager {
+namespace SyncIO.Server.RemoteCalls
+{
+    internal class RemoteCallServerManager
+    {
 
         private Dictionary<Type, uint> BindableTypes;
         private Dictionary<string, RemoteFunctionBind> FunctionLookup = new Dictionary<string, RemoteFunctionBind>();
         private RemoteFunctionCallAuth DefaultAuthCallback;
         private object SyncLock = new object();
 
-        public RemoteCallServerManager(Packager _packer) {
+        public RemoteCallServerManager(Packager _packer)
+        {
             BindableTypes = _packer.GetTypeDictionary();
         }
 
@@ -23,7 +26,8 @@ namespace SyncIO.Server.RemoteCalls {
         /// SetAuthFunc will be called on each BindRemoteCall funcion with this callback.
         /// </summary>
         /// <param name="_DefaultAuthCallback">the callback</param>
-        public void SetDefaultAuthCallback(RemoteFunctionCallAuth _DefaultAuthCallback) {
+        public void SetDefaultAuthCallback(RemoteFunctionCallAuth _DefaultAuthCallback)
+        {
             DefaultAuthCallback = _DefaultAuthCallback;
         }
 
@@ -33,7 +37,8 @@ namespace SyncIO.Server.RemoteCalls {
         /// <param name="name">Name of the function to be caled by</param>
         /// <param name="a">Function to bind</param>
         /// <returns>Function infomation</returns>
-        public RemoteFunctionBind BindRemoteCall(string name, Delegate a) {
+        public RemoteFunctionBind BindRemoteCall(string name, Delegate a)
+        {
 
             if (FunctionLookup.ContainsKey(name))
                 throw new Exception("Function with the same name alredy exists");
@@ -48,7 +53,8 @@ namespace SyncIO.Server.RemoteCalls {
             funcInfo.ReturnType = BindableTypes[a.Method.ReturnType];
             funcInfo.Parameters = new uint[funcParamInfo.Length];
 
-            for (int i = 0; i < funcParamInfo.Length; i++) {
+            for (int i = 0; i < funcParamInfo.Length; i++)
+            {
                 var t = funcParamInfo[i].ParameterType;
                 if (!BindableTypes.ContainsKey(t))
                     throw new Exception(string.Format("Parameter type {0} not seralizable.", t));
@@ -61,19 +67,24 @@ namespace SyncIO.Server.RemoteCalls {
             return remoteFunc;
         }
 
-        public void HandleClientFunctionCall(SyncIOConnectedClient client, RemoteCallRequest reqst) {
+        public void HandleClientFunctionCall(SyncIOConnectedClient client, RemoteCallRequest reqst)
+        {
 
-            lock (SyncLock) {
+            lock (SyncLock)
+            {
 
-                var respPacket = new RemoteCallResponse(reqst.CallID, reqst.Name);
+                var respPacket = new RemoteCallResponse(reqst.CallId, reqst.Name);
 
-                if (FunctionLookup.ContainsKey(reqst.Name)) {
+                if (FunctionLookup.ContainsKey(reqst.Name))
+                {
                     var func = FunctionLookup[reqst.Name];
 
-                    for (int i = 0; i < reqst.Args.Length; i++) {
+                    for (int i = 0; i < reqst.Args.Length; i++)
+                    {
                         var argType = reqst.Args[i].GetType();
-                        if (!BindableTypes.ContainsKey(argType) || !func.ValidParameter(i, BindableTypes[argType])) {
-                            respPacket.Reponce = FunctionResponceStatus.InvalidParameters;
+                        if (!BindableTypes.ContainsKey(argType) || !func.ValidParameter(i, BindableTypes[argType]))
+                        {
+                            respPacket.Response = FunctionResponseStatus.InvalidParameters;
                             client.Send(respPacket);
                             return;
                         }
@@ -81,13 +92,14 @@ namespace SyncIO.Server.RemoteCalls {
 
                     func.Invoke(client, respPacket, reqst.Args);
 
-                } else {
-                    respPacket.Reponce = FunctionResponceStatus.DoesNotExist;
+                }
+                else
+                {
+                    respPacket.Response = FunctionResponseStatus.DoesNotExist;
                 }
 
                 client.Send(respPacket);
             }
         }
-
     }
 }

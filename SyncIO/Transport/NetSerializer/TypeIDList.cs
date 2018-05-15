@@ -6,91 +6,89 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-
 namespace NetSerializer
 {
-	/// <summary>
-	/// Threadsafe TypeID -> TypeData list, which supports lockless reading.
-	/// </summary>
-	class TypeIDList
-	{
-		TypeData[] m_array;
-		object m_writeLock = new object();
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
 
-		const int InitialLength = 256;
+    /// <summary>
+    /// Threadsafe TypeID -> TypeData list, which supports lockless reading.
+    /// </summary>
+    class TypeIDList
+    {
+        TypeData[] m_array;
+        object m_writeLock = new object();
 
-		public TypeIDList()
-		{
-			m_array = new TypeData[InitialLength];
-		}
+        const int InitialLength = 256;
 
-		public bool ContainsTypeID(uint typeID)
-		{
-			return typeID < m_array.Length && m_array[typeID] != null;
-		}
+        public TypeIDList()
+        {
+            m_array = new TypeData[InitialLength];
+        }
 
-		public TypeData this[uint idx]
-		{
-			get
-			{
-				return m_array[idx];
-			}
+        public bool ContainsTypeID(uint typeID)
+        {
+            return typeID < m_array.Length && m_array[typeID] != null;
+        }
 
-			set
-			{
-				lock (m_writeLock)
-				{
-					Debug.Assert(value.TypeID == idx);
+        public TypeData this[uint idx]
+        {
+            get
+            {
+                return m_array[idx];
+            }
 
-					if (idx >= m_array.Length)
-					{
-						var newArray = new TypeData[NextPowOf2(idx + 1)];
-						Array.Copy(m_array, newArray, m_array.Length);
-						m_array = newArray;
-					}
+            set
+            {
+                lock (m_writeLock)
+                {
+                    Debug.Assert(value.TypeID == idx);
 
-					Debug.Assert(m_array[idx] == null);
+                    if (idx >= m_array.Length)
+                    {
+                        var newArray = new TypeData[NextPowOf2(idx + 1)];
+                        Array.Copy(m_array, newArray, m_array.Length);
+                        m_array = newArray;
+                    }
 
-					m_array[idx] = value;
-				}
-			}
-		}
+                    Debug.Assert(m_array[idx] == null);
 
-		uint NextPowOf2(uint v)
-		{
-			v--;
-			v |= v >> 1;
-			v |= v >> 2;
-			v |= v >> 4;
-			v |= v >> 8;
-			v |= v >> 16;
-			v++;
-			return v;
-		}
+                    m_array[idx] = value;
+                }
+            }
+        }
 
-		public SortedList<uint, Type> ToSortedList()
-		{
-			var list = new SortedList<uint, Type>();
+        uint NextPowOf2(uint v)
+        {
+            v--;
+            v |= v >> 1;
+            v |= v >> 2;
+            v |= v >> 4;
+            v |= v >> 8;
+            v |= v >> 16;
+            v++;
+            return v;
+        }
 
-			lock (m_writeLock)
-			{
-				for (uint i = 0; i < m_array.Length; ++i)
-				{
-					var td = m_array[i];
+        public SortedList<uint, Type> ToSortedList()
+        {
+            var list = new SortedList<uint, Type>();
 
-					if (td == null)
-						continue;
+            lock (m_writeLock)
+            {
+                for (uint i = 0; i < m_array.Length; ++i)
+                {
+                    var td = m_array[i];
 
-					list.Add(i, td.Type);
-				}
-			}
+                    if (td == null)
+                        continue;
 
-			return list;
-		}
-	}
+                    list.Add(i, td.Type);
+                }
+            }
+
+            return list;
+        }
+    }
 }

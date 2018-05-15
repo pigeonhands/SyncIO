@@ -6,46 +6,43 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-
 namespace NetSerializer
 {
-	sealed class EnumSerializer : IStaticTypeSerializer
-	{
-		public bool Handles(Type type)
-		{
-			return type.IsEnum;
-		}
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Reflection;
 
-		public IEnumerable<Type> GetSubtypes(Type type)
-		{
-			var underlyingType = Enum.GetUnderlyingType(type);
+    sealed class EnumSerializer : IStaticTypeSerializer
+    {
+        public bool Handles(Type type)
+        {
+            return type.IsEnum;
+        }
 
-			return new[] { underlyingType };
-		}
+        public IEnumerable<Type> GetSubtypes(Type type)
+        {
+            var underlyingType = Enum.GetUnderlyingType(type);
 
-		public MethodInfo GetStaticWriter(Type type)
-		{
-			Debug.Assert(type.IsEnum);
+            return new[] { underlyingType };
+        }
 
-			var underlyingType = Enum.GetUnderlyingType(type);
+        public MethodInfo GetStaticWriter(Type type)
+        {
+            Debug.Assert(type.IsEnum);
 
-			return Primitives.GetWritePrimitive(underlyingType);
-		}
+            var underlyingType = Enum.GetUnderlyingType(type);
 
-		public MethodInfo GetStaticReader(Type type)
-		{
-			Debug.Assert(type.IsEnum);
+            return Primitives.GetWritePrimitive(underlyingType);
+        }
 
-			var underlyingType = Enum.GetUnderlyingType(type);
+        public MethodInfo GetStaticReader(Type type)
+        {
+            Debug.Assert(type.IsEnum);
 
-			return Primitives.GetReaderPrimitive(underlyingType);
-		}
-	}
+            var underlyingType = Enum.GetUnderlyingType(type);
+
+            return Primitives.GetReaderPrimitive(underlyingType);
+        }
+    }
 }

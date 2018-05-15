@@ -1,16 +1,17 @@
-﻿using SyncIO.Transport.Packets;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Network
+{
+    using System;
 
-namespace SyncIO.Network {
-    public interface ISyncIOClient {
+    using SyncIO.Transport.Packets;
+
+    public interface ISyncIOClient
+    {
         void Send(params object[] data);
+
         void Send(IPacket packet);
 
         void Send(Action<SyncIOConnectedClient> afterSend, params object[] data);
+
         void Send(Action<SyncIOConnectedClient> afterSend, IPacket packet);
     }
 }

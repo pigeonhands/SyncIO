@@ -6,189 +6,186 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Text;
-
 namespace NetSerializer
 {
-	sealed class ArraySerializer : IDynamicTypeSerializer
-	{
-		public bool Handles(Type type)
-		{
-			if (!type.IsArray)
-				return false;
+    using System;
+    using System.Collections.Generic;
+    using System.Reflection.Emit;
 
-			if (type.GetArrayRank() != 1)
-				throw new NotSupportedException(String.Format("Multi-dim arrays not supported: {0}", type.FullName));
+    sealed class ArraySerializer : IDynamicTypeSerializer
+    {
+        public bool Handles(Type type)
+        {
+            if (!type.IsArray)
+                return false;
 
-			return true;
-		}
+            if (type.GetArrayRank() != 1)
+                throw new NotSupportedException(String.Format("Multi-dim arrays not supported: {0}", type.FullName));
 
-		public IEnumerable<Type> GetSubtypes(Type type)
-		{
-			return new[] { typeof(uint), type.GetElementType() };
-		}
+            return true;
+        }
 
-		public void GenerateWriterMethod(Serializer serializer, Type type, ILGenerator il)
-		{
-			var elemType = type.GetElementType();
+        public IEnumerable<Type> GetSubtypes(Type type)
+        {
+            return new[] { typeof(uint), type.GetElementType() };
+        }
 
-			var notNullLabel = il.DefineLabel();
+        public void GenerateWriterMethod(Serializer serializer, Type type, ILGenerator il)
+        {
+            var elemType = type.GetElementType();
 
-			il.Emit(OpCodes.Ldarg_2);
-			il.Emit(OpCodes.Brtrue_S, notNullLabel);
+            var notNullLabel = il.DefineLabel();
 
-			// if value == null, write 0
-			il.Emit(OpCodes.Ldarg_1);
-			il.Emit(OpCodes.Ldc_I4_0);
-			//il.Emit(OpCodes.Tailcall);
-			il.Emit(OpCodes.Call, serializer.GetDirectWriter(typeof(uint)));
-			il.Emit(OpCodes.Ret);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Brtrue_S, notNullLabel);
 
-			il.MarkLabel(notNullLabel);
+            // if value == null, write 0
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldc_I4_0);
+            //il.Emit(OpCodes.Tailcall);
+            il.Emit(OpCodes.Call, serializer.GetDirectWriter(typeof(uint)));
+            il.Emit(OpCodes.Ret);
 
-			// write array len + 1
-			il.Emit(OpCodes.Ldarg_1);
-			il.Emit(OpCodes.Ldarg_2);
-			il.Emit(OpCodes.Ldlen);
-			il.Emit(OpCodes.Ldc_I4_1);
-			il.Emit(OpCodes.Add);
-			il.Emit(OpCodes.Call, serializer.GetDirectWriter(typeof(uint)));
+            il.MarkLabel(notNullLabel);
 
-			// declare i
-			var idxLocal = il.DeclareLocal(typeof(int));
+            // write array len + 1
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldlen);
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Add);
+            il.Emit(OpCodes.Call, serializer.GetDirectWriter(typeof(uint)));
 
-			// i = 0
-			il.Emit(OpCodes.Ldc_I4_0);
-			il.Emit(OpCodes.Stloc_S, idxLocal);
+            // declare i
+            var idxLocal = il.DeclareLocal(typeof(int));
 
-			var loopBodyLabel = il.DefineLabel();
-			var loopCheckLabel = il.DefineLabel();
+            // i = 0
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Stloc_S, idxLocal);
 
-			il.Emit(OpCodes.Br_S, loopCheckLabel);
+            var loopBodyLabel = il.DefineLabel();
+            var loopCheckLabel = il.DefineLabel();
 
-			// loop body
-			il.MarkLabel(loopBodyLabel);
+            il.Emit(OpCodes.Br_S, loopCheckLabel);
 
-			var data = serializer.GetIndirectData(elemType);
+            // loop body
+            il.MarkLabel(loopBodyLabel);
 
-			if (data.WriterNeedsInstance)
-				il.Emit(OpCodes.Ldarg_0);
+            var data = serializer.GetIndirectData(elemType);
 
-			// write element at index i
-			il.Emit(OpCodes.Ldarg_1);
-			il.Emit(OpCodes.Ldarg_2);
-			il.Emit(OpCodes.Ldloc_S, idxLocal);
-			il.Emit(OpCodes.Ldelem, elemType);
+            if (data.WriterNeedsInstance)
+                il.Emit(OpCodes.Ldarg_0);
 
-			il.Emit(OpCodes.Call, data.WriterMethodInfo);
+            // write element at index i
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldloc_S, idxLocal);
+            il.Emit(OpCodes.Ldelem, elemType);
 
-			// i = i + 1
-			il.Emit(OpCodes.Ldloc_S, idxLocal);
-			il.Emit(OpCodes.Ldc_I4_1);
-			il.Emit(OpCodes.Add);
-			il.Emit(OpCodes.Stloc_S, idxLocal);
+            il.Emit(OpCodes.Call, data.WriterMethodInfo);
 
-			il.MarkLabel(loopCheckLabel);
+            // i = i + 1
+            il.Emit(OpCodes.Ldloc_S, idxLocal);
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Add);
+            il.Emit(OpCodes.Stloc_S, idxLocal);
 
-			// loop condition
-			il.Emit(OpCodes.Ldloc_S, idxLocal);
-			il.Emit(OpCodes.Ldarg_2);
-			il.Emit(OpCodes.Ldlen);
-			il.Emit(OpCodes.Conv_I4);
-			il.Emit(OpCodes.Blt_S, loopBodyLabel);
+            il.MarkLabel(loopCheckLabel);
 
-			il.Emit(OpCodes.Ret);
-		}
+            // loop condition
+            il.Emit(OpCodes.Ldloc_S, idxLocal);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldlen);
+            il.Emit(OpCodes.Conv_I4);
+            il.Emit(OpCodes.Blt_S, loopBodyLabel);
 
-		public void GenerateReaderMethod(Serializer serializer, Type type, ILGenerator il)
-		{
-			var elemType = type.GetElementType();
+            il.Emit(OpCodes.Ret);
+        }
 
-			var lenLocal = il.DeclareLocal(typeof(uint));
+        public void GenerateReaderMethod(Serializer serializer, Type type, ILGenerator il)
+        {
+            var elemType = type.GetElementType();
 
-			// read array len
-			il.Emit(OpCodes.Ldarg_1);
-			il.Emit(OpCodes.Ldloca_S, lenLocal);
-			il.Emit(OpCodes.Call, serializer.GetDirectReader(typeof(uint)));
+            var lenLocal = il.DeclareLocal(typeof(uint));
 
-			var notNullLabel = il.DefineLabel();
+            // read array len
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldloca_S, lenLocal);
+            il.Emit(OpCodes.Call, serializer.GetDirectReader(typeof(uint)));
 
-			/* if len == 0, return null */
-			il.Emit(OpCodes.Ldloc_S, lenLocal);
-			il.Emit(OpCodes.Brtrue_S, notNullLabel);
+            var notNullLabel = il.DefineLabel();
 
-			il.Emit(OpCodes.Ldarg_2);
-			il.Emit(OpCodes.Ldnull);
-			il.Emit(OpCodes.Stind_Ref);
-			il.Emit(OpCodes.Ret);
+            /* if len == 0, return null */
+            il.Emit(OpCodes.Ldloc_S, lenLocal);
+            il.Emit(OpCodes.Brtrue_S, notNullLabel);
 
-			il.MarkLabel(notNullLabel);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldnull);
+            il.Emit(OpCodes.Stind_Ref);
+            il.Emit(OpCodes.Ret);
 
-			var arrLocal = il.DeclareLocal(type);
+            il.MarkLabel(notNullLabel);
 
-			// create new array with len - 1
-			il.Emit(OpCodes.Ldloc_S, lenLocal);
-			il.Emit(OpCodes.Ldc_I4_1);
-			il.Emit(OpCodes.Sub);
-			il.Emit(OpCodes.Newarr, elemType);
-			il.Emit(OpCodes.Stloc_S, arrLocal);
+            var arrLocal = il.DeclareLocal(type);
 
-			// declare i
-			var idxLocal = il.DeclareLocal(typeof(int));
+            // create new array with len - 1
+            il.Emit(OpCodes.Ldloc_S, lenLocal);
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Sub);
+            il.Emit(OpCodes.Newarr, elemType);
+            il.Emit(OpCodes.Stloc_S, arrLocal);
 
-			// i = 0
-			il.Emit(OpCodes.Ldc_I4_0);
-			il.Emit(OpCodes.Stloc_S, idxLocal);
+            // declare i
+            var idxLocal = il.DeclareLocal(typeof(int));
 
-			var loopBodyLabel = il.DefineLabel();
-			var loopCheckLabel = il.DefineLabel();
+            // i = 0
+            il.Emit(OpCodes.Ldc_I4_0);
+            il.Emit(OpCodes.Stloc_S, idxLocal);
 
-			il.Emit(OpCodes.Br_S, loopCheckLabel);
+            var loopBodyLabel = il.DefineLabel();
+            var loopCheckLabel = il.DefineLabel();
 
-			// loop body
-			il.MarkLabel(loopBodyLabel);
+            il.Emit(OpCodes.Br_S, loopCheckLabel);
 
-			// read element to arr[i]
+            // loop body
+            il.MarkLabel(loopBodyLabel);
 
-			var data = serializer.GetIndirectData(elemType);
+            // read element to arr[i]
 
-			if (data.ReaderNeedsInstance)
-				il.Emit(OpCodes.Ldarg_0);
+            var data = serializer.GetIndirectData(elemType);
 
-			il.Emit(OpCodes.Ldarg_1);
-			il.Emit(OpCodes.Ldloc_S, arrLocal);
-			il.Emit(OpCodes.Ldloc_S, idxLocal);
-			il.Emit(OpCodes.Ldelema, elemType);
+            if (data.ReaderNeedsInstance)
+                il.Emit(OpCodes.Ldarg_0);
 
-			il.Emit(OpCodes.Call, data.ReaderMethodInfo);
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldloc_S, arrLocal);
+            il.Emit(OpCodes.Ldloc_S, idxLocal);
+            il.Emit(OpCodes.Ldelema, elemType);
 
-			// i = i + 1
-			il.Emit(OpCodes.Ldloc_S, idxLocal);
-			il.Emit(OpCodes.Ldc_I4_1);
-			il.Emit(OpCodes.Add);
-			il.Emit(OpCodes.Stloc_S, idxLocal);
+            il.Emit(OpCodes.Call, data.ReaderMethodInfo);
 
-			il.MarkLabel(loopCheckLabel);
+            // i = i + 1
+            il.Emit(OpCodes.Ldloc_S, idxLocal);
+            il.Emit(OpCodes.Ldc_I4_1);
+            il.Emit(OpCodes.Add);
+            il.Emit(OpCodes.Stloc_S, idxLocal);
 
-			// loop condition
-			il.Emit(OpCodes.Ldloc_S, idxLocal);
-			il.Emit(OpCodes.Ldloc_S, arrLocal);
-			il.Emit(OpCodes.Ldlen);
-			il.Emit(OpCodes.Conv_I4);
-			il.Emit(OpCodes.Blt_S, loopBodyLabel);
+            il.MarkLabel(loopCheckLabel);
+
+            // loop condition
+            il.Emit(OpCodes.Ldloc_S, idxLocal);
+            il.Emit(OpCodes.Ldloc_S, arrLocal);
+            il.Emit(OpCodes.Ldlen);
+            il.Emit(OpCodes.Conv_I4);
+            il.Emit(OpCodes.Blt_S, loopBodyLabel);
 
 
-			// store new array to the out value
-			il.Emit(OpCodes.Ldarg_2);
-			il.Emit(OpCodes.Ldloc_S, arrLocal);
-			il.Emit(OpCodes.Stind_Ref);
+            // store new array to the out value
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Ldloc_S, arrLocal);
+            il.Emit(OpCodes.Stind_Ref);
 
-			il.Emit(OpCodes.Ret);
-		}
-	}
+            il.Emit(OpCodes.Ret);
+        }
+    }
 }

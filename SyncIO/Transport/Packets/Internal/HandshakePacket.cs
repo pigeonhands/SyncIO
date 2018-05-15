@@ -1,19 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Transport.Packets.Internal
+{
+    using System;
 
-namespace SyncIO.Transport.Packets.Internal {
     [Serializable]
-    internal class HandshakePacket : IPacket {
+    internal class HandshakePacket : IPacket
+    {
+        public Guid Id { get; set; }
+
         public bool Success { get; set; }
-        public Guid ID { get; set; }
 
-        public HandshakePacket(bool _success, Guid _id) {
-            Success = _success;
-            ID = _id;
+        public HandshakePacket(Guid id, bool success)
+        {
+            Id = id;
+            Success = success;
         }
-
     }
 }

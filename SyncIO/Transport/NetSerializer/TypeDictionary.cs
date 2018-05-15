@@ -6,197 +6,196 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-
 namespace NetSerializer
 {
-	/// <summary>
-	/// Threadsafe Type -> T dictionary, which supports lockless reading.
-	/// </summary>
-	class TypeDictionary
-	{
-		struct Pair
-		{
-			public Pair(Type key, TypeData value)
-			{
-				this.Key = key;
-				this.Value = value;
-			}
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Linq;
+    using System.Threading;
 
-			public Type Key;
-			public TypeData Value;
-		}
+    /// <summary>
+    /// Threadsafe Type -> T dictionary, which supports lockless reading.
+    /// </summary>
+    class TypeDictionary
+    {
+        struct Pair
+        {
+            public Pair(Type key, TypeData value)
+            {
+                this.Key = key;
+                this.Value = value;
+            }
 
-		Pair[][] m_buckets;
-		object m_writeLock = new object();
-		int m_numItems;
+            public Type Key;
+            public TypeData Value;
+        }
 
-		const int InitialListSize = 1;
-		const float LoadLimit = 0.50f;
-		const int InitialLength = 256;
+        Pair[][] m_buckets;
+        readonly object m_writeLock = new object();
+        int m_numItems;
 
-		public TypeDictionary()
-		{
-			int numBuckets = (int)(InitialLength * (1.0f / LoadLimit));
-			m_buckets = new Pair[numBuckets][];
-		}
+        const int InitialListSize = 1;
+        const float LoadLimit = 0.50f;
+        const int InitialLength = 256;
 
-		public bool ContainsKey(Type key)
-		{
-			TypeData value;
-			return TryGetValue(key, out value);
-		}
+        public TypeDictionary()
+        {
+            int numBuckets = (int)(InitialLength * (1.0f / LoadLimit));
+            m_buckets = new Pair[numBuckets][];
+        }
 
-		public bool TryGetValue(Type key, out TypeData value)
-		{
-			var buckets = Volatile.Read(ref m_buckets);
+        public bool ContainsKey(Type key)
+        {
+            return TryGetValue(key, out TypeData value);
+        }
 
-			int idx = Hash(key, buckets.Length);
+        public bool TryGetValue(Type key, out TypeData value)
+        {
+            var buckets = Volatile.Read(ref m_buckets);
 
-			Pair[] arr = Volatile.Read(ref buckets[idx]);
-			if (arr == null)
-				goto not_found;
+            int idx = Hash(key, buckets.Length);
 
-			for (int i = 0; i < arr.Length; ++i)
-			{
-				if (arr[i].Key == key)
-				{
-					value = arr[i].Value;
-					return true;
-				}
-			}
+            Pair[] arr = Volatile.Read(ref buckets[idx]);
+            if (arr == null)
+                goto not_found;
 
-			not_found:
-			value = null;
-			return false;
-		}
+            for (int i = 0; i < arr.Length; ++i)
+            {
+                if (arr[i].Key == key)
+                {
+                    value = arr[i].Value;
+                    return true;
+                }
+            }
 
-		public TypeData this[Type key]
-		{
-			get
-			{
-				var buckets = Volatile.Read(ref m_buckets);
+            not_found:
+            value = null;
+            return false;
+        }
 
-				int idx = Hash(key, buckets.Length);
+        public TypeData this[Type key]
+        {
+            get
+            {
+                var buckets = Volatile.Read(ref m_buckets);
 
-				Pair[] arr = Volatile.Read(ref buckets[idx]);
-				if (arr == null)
-					throw new KeyNotFoundException(String.Format("Type not found {0}", key));
+                int idx = Hash(key, buckets.Length);
 
-				for (int i = 0; i < arr.Length; ++i)
-				{
-					if (arr[i].Key == key)
-						return arr[i].Value;
-				}
+                Pair[] arr = Volatile.Read(ref buckets[idx]);
+                if (arr == null)
+                    throw new KeyNotFoundException(String.Format("Type not found {0}", key));
 
-				throw new KeyNotFoundException(String.Format("Type not found {0}", key));
-			}
+                for (int i = 0; i < arr.Length; ++i)
+                {
+                    if (arr[i].Key == key)
+                        return arr[i].Value;
+                }
 
-			set
-			{
-				lock (m_writeLock)
-				{
-					Debug.Assert(ContainsKey(key) == false);
+                throw new KeyNotFoundException(String.Format("Type not found {0}", key));
+            }
 
-					if (m_numItems >= m_buckets.Length * LoadLimit)
-					{
-						var newBuckets = new Pair[m_buckets.Length * 2][];
+            set
+            {
+                lock (m_writeLock)
+                {
+                    Debug.Assert(ContainsKey(key) == false);
 
-						foreach (var list in m_buckets.Where(l => l != null))
-						{
-							foreach (var pair in list.Where(p => p.Key != null))
-								Add(newBuckets, pair.Key, pair.Value);
-						}
+                    if (m_numItems >= m_buckets.Length * LoadLimit)
+                    {
+                        var newBuckets = new Pair[m_buckets.Length * 2][];
 
-						Volatile.Write(ref m_buckets, newBuckets);
-					}
+                        foreach (var list in m_buckets.Where(l => l != null))
+                        {
+                            foreach (var pair in list.Where(p => p.Key != null))
+                                Add(newBuckets, pair.Key, pair.Value);
+                        }
 
-					Add(m_buckets, key, value);
+                        Volatile.Write(ref m_buckets, newBuckets);
+                    }
 
-					m_numItems++;
-				}
-			}
-		}
+                    Add(m_buckets, key, value);
 
-		static void Add(Pair[][] buckets, Type key, TypeData value)
-		{
-			int idx = Hash(key, buckets.Length);
+                    m_numItems++;
+                }
+            }
+        }
 
-			Pair[] arr = buckets[idx];
-			if (arr == null)
-				buckets[idx] = arr = new Pair[InitialListSize];
+        static void Add(Pair[][] buckets, Type key, TypeData value)
+        {
+            int idx = Hash(key, buckets.Length);
 
-			for (int i = 0; i < arr.Length; ++i)
-			{
-				if (arr[i].Key == null)
-				{
-					arr[i] = new Pair(key, value);
-					return;
-				}
-			}
+            Pair[] arr = buckets[idx];
+            if (arr == null)
+                buckets[idx] = arr = new Pair[InitialListSize];
 
-			var newArr = new Pair[arr.Length * 2];
-			Array.Copy(arr, newArr, arr.Length);
-			newArr[arr.Length] = new Pair(key, value);
-			buckets[idx] = newArr;
-		}
+            for (int i = 0; i < arr.Length; ++i)
+            {
+                if (arr[i].Key == null)
+                {
+                    arr[i] = new Pair(key, value);
+                    return;
+                }
+            }
 
-		static int Hash(Type key, int bucketsLen)
-		{
-			uint h = (uint)System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(key);
-			h %= (uint)bucketsLen;
-			return (int)h;
-		}
+            var newArr = new Pair[arr.Length * 2];
+            Array.Copy(arr, newArr, arr.Length);
+            newArr[arr.Length] = new Pair(key, value);
+            buckets[idx] = newArr;
+        }
 
-		public Dictionary<Type, uint> ToDictionary()
-		{
-			var map = new Dictionary<Type, uint>(m_numItems);
+        static int Hash(Type key, int bucketsLen)
+        {
+            uint h = (uint)System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(key);
+            h %= (uint)bucketsLen;
+            return (int)h;
+        }
 
-			foreach (var list in m_buckets)
-			{
-				if (list == null)
-					continue;
+        public Dictionary<Type, uint> ToDictionary()
+        {
+            var map = new Dictionary<Type, uint>(m_numItems);
 
-				foreach (var pair in list)
-				{
-					if (pair.Key == null)
-						continue;
+            foreach (var list in m_buckets)
+            {
+                if (list == null)
+                    continue;
 
-					var td = pair.Value;
+                foreach (var pair in list)
+                {
+                    if (pair.Key == null)
+                        continue;
 
-					map[td.Type] = td.TypeID;
-				}
-			}
+                    var td = pair.Value;
 
-			return map;
-		}
+                    map[td.Type] = td.TypeID;
+                }
+            }
+
+            return map;
+        }
 
 
-		[Conditional("DEBUG")]
-		public void DebugDump()
-		{
-			int occupied = m_buckets.Count(i => i != null);
+        [Conditional("DEBUG")]
+        public void DebugDump()
+        {
+            int occupied = m_buckets.Count(i => i != null);
 
-			Console.WriteLine("bucket arr len {0}, items {1}, occupied buckets {2}", m_buckets.Length, m_numItems, occupied);
+            Console.WriteLine("bucket arr len {0}, items {1}, occupied buckets {2}", m_buckets.Length, m_numItems, occupied);
 
-			var countmap = new Dictionary<int, int>();
-			foreach (var list in m_buckets)
-			{
-				if (list == null)
-					continue;
+            var countmap = new Dictionary<int, int>();
+            foreach (var list in m_buckets)
+            {
+                if (list == null)
+                    continue;
 
-				int c = list.TakeWhile(p => p.Key != null).Count();
-				if (countmap.ContainsKey(c) == false)
-					countmap[c] = 0;
-				countmap[c]++;
-			}
+                int c = list.TakeWhile(p => p.Key != null).Count();
+                if (countmap.ContainsKey(c) == false)
+                    countmap[c] = 0;
+                countmap[c]++;
+            }
 
-			foreach (var kvp in countmap.OrderBy(kvp => kvp.Key))
-				Console.WriteLine("{0}: {1}", kvp.Key, kvp.Value);
-		}
-	}
+            foreach (var kvp in countmap.OrderBy(kvp => kvp.Key))
+                Console.WriteLine("{0}: {1}", kvp.Key, kvp.Value);
+        }
+    }
 }

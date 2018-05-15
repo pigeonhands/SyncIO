@@ -1,28 +1,33 @@
-﻿using SyncIO.Transport.Encryption;
-using SyncIO.Transport.Encryption.Defaults;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Transport
+{
+    using SyncIO.Transport.Compression;
+    using SyncIO.Transport.Encryption;
+    using SyncIO.Transport.Encryption.Defaults;
 
-namespace SyncIO.Transport {
-    internal class PackConfig {
+    internal class PackConfig
+    {
         public ISyncIOEncryption Encryption { get; set; }
+
+        public ISyncIOCompression Compression { get; set; }
+
         /// <summary>
         /// Generates a usable SyncIOEncryptionRijndael object
         /// </summary>
         /// <param name="size">Size of encryption key</param>
         /// <returns></returns>
-        public static ISyncIOEncryption GenerateNewEncryption(SyncIOKeySize size) {
+        public static ISyncIOEncryption GenerateNewEncryption(SyncIOKeySize size)
+        {
             return new SyncIOEncryptionRijndael(Packager.RandomBytes((int)size));
         }
 
         /// <summary>
         /// Manages post packing functions
         /// </summary>
-        public byte[] PostPacking(byte[] data) {
+        public byte[] PostPacking(byte[] data)
+        {
+            if (Compression != null)
+                data = Compression.Compress(data);
+
             if (Encryption != null)
                 data = Encryption.Encrypt(data);
 
@@ -32,9 +37,13 @@ namespace SyncIO.Transport {
         /// <summary>
         /// Manages pre unpacking functions
         /// </summary>
-        public byte[] PreUnpacking(byte[] data) {
+        public byte[] PreUnpacking(byte[] data)
+        {
             if (Encryption != null)
                 data = Encryption.Decrypt(data);
+
+            if (Compression != null)
+                data = Compression.Decompress(data);
 
             return data;
         }
@@ -42,7 +51,8 @@ namespace SyncIO.Transport {
     /// <summary>
     /// Bit -> byte for encryption keys
     /// </summary>
-    internal enum SyncIOKeySize {
+    internal enum SyncIOKeySize
+    {
         Bit128 = 16,
         Bit192 = 24,
         Bit256 = 32

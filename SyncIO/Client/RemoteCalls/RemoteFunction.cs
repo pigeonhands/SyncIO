@@ -1,24 +1,25 @@
-﻿using SyncIO.Network;
-using SyncIO.Transport.RemoteCalls;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Client.RemoteCalls
+{
+    using System;
+    using System.Threading;
 
-namespace SyncIO.Client.RemoteCalls {
+    using SyncIO.Network;
+    using SyncIO.Transport.RemoteCalls;
+
     public delegate void RemoteFunctionCallback<T>(RemoteFunction<T> function, T returnValue, Guid CallID);
 
     /// <summary>
     /// Used internaly only
     /// </summary>
-    public abstract class RemoteFunction {
-        public FunctionResponceStatus LastStatus { get; internal set; }
-        public abstract void SetReturnValue(object val, Guid _callID);
+    public abstract class RemoteFunction
+    {
+        public FunctionResponseStatus LastStatus { get; internal set; }
+
+        public abstract void SetReturnValue(object value, Guid callId);
     }
 
-    public abstract class RemoteFunction<T> : RemoteFunction {
+    public abstract class RemoteFunction<T> : RemoteFunction
+    {
 
         public T LastValue { get; internal set; }
 
@@ -26,65 +27,75 @@ namespace SyncIO.Client.RemoteCalls {
         /// <summary>
         /// Calls function without blocking the current thread
         /// </summary>
-        /// <param name="param">Call ID of current call</param>
+        /// <param name="args">Call ID of current call</param>
         /// <returns></returns>
         public abstract Guid Call(params object[] args);
+
         public abstract T CallWait(params object[] args);
 
-        protected void RaiseReturn(T val, Guid CallID) {
+        protected void RaiseReturn(T val, Guid CallID)
+        {
             LastValue = val;
             ReturnCallback?.Invoke(this, val, CallID);
         }
     }
 
-    internal class InternalRemoteFunction<T> : RemoteFunction<T> {
+    internal class InternalRemoteFunction<T> : RemoteFunction<T>
+    {
 
-        private SyncIOClient client;
-        private object SyncLock = new object();
-        private string Name;
+        private SyncIOClient _client;
+        private readonly object _syncLock = new object();
+        private string _name;
 
-        private Guid CallID;
-        private T ReturnValue;
-       
+        private Guid _callId;
+        private T _returnValue;
 
-        public InternalRemoteFunction(SyncIOClient _client, string _name) {
-            Name = _name;
-            client = _client;
+
+        public InternalRemoteFunction(SyncIOClient client, string name)
+        {
+            _name = name;
+            _client = client;
         }
 
-        public override void SetReturnValue(object val, Guid _callID) {
-            lock (SyncLock) {
-                if (val == null)
-                    ReturnValue = default(T);
+        public override void SetReturnValue(object value, Guid callId)
+        {
+            lock (_syncLock)
+            {
+                if (value == null)
+                    _returnValue = default(T);
                 else
-                    ReturnValue = (T)val;
+                    _returnValue = (T)value;
 
-                CallID = _callID;
-                RaiseReturn(ReturnValue, CallID);
-                Monitor.PulseAll(SyncLock);
+                _callId = callId;
+                RaiseReturn(_returnValue, _callId);
+                Monitor.PulseAll(_syncLock);
             }
         }
 
-        public override Guid Call(object[] args) {
+        public override Guid Call(params object[] args)
+        {
             var id = Guid.NewGuid();
-            client.Send(new RemoteCallRequest() {
-                Name = Name,
-                CallID = id,
+            _client.Send(new RemoteCallRequest
+            {
+                Name = _name,
+                CallId = id,
                 Args = args
             });
             return id;
         }
 
 
-        public override T CallWait(object[] args) {
-            lock (SyncLock) {
+        public override T CallWait(params object[] args)
+        {
+            lock (_syncLock)
+            {
                 var id = Call(args);
-                do {
-                    Monitor.Wait(SyncLock);
-                } while (CallID != id);
-                return ReturnValue;
+                do
+                {
+                    Monitor.Wait(_syncLock);
+                } while (_callId != id);
+                return _returnValue;
             }
         }
     }
-
 }

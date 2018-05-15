@@ -6,108 +6,108 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Reflection.Emit;
-
 namespace NetSerializer
 {
-	sealed class NullableSerializer : IDynamicTypeSerializer
-	{
-		public bool Handles(Type type)
-		{
-			if (!type.IsGenericType)
-				return false;
+    using System;
+    using System.Collections.Generic;
+    using System.Reflection;
+    using System.Reflection.Emit;
 
-			var genTypeDef = type.GetGenericTypeDefinition();
+    public class NullableSerializer : IDynamicTypeSerializer
+    {
+        public bool Handles(Type type)
+        {
+            if (!type.IsGenericType)
+                return false;
 
-			return genTypeDef == typeof(Nullable<>);
-		}
+            var genTypeDef = type.GetGenericTypeDefinition();
 
-		public IEnumerable<Type> GetSubtypes(Type type)
-		{
-			var genArgs = type.GetGenericArguments();
+            return genTypeDef == typeof(Nullable<>);
+        }
 
-			return new[] { typeof(bool), genArgs[0] };
-		}
+        public IEnumerable<Type> GetSubtypes(Type type)
+        {
+            var genArgs = type.GetGenericArguments();
 
-		public void GenerateWriterMethod(Serializer serializer, Type type, ILGenerator il)
-		{
-			var valueType = type.GetGenericArguments()[0];
+            return new[] { typeof(bool), genArgs[0] };
+        }
 
-			var noValueLabel = il.DefineLabel();
+        public void GenerateWriterMethod(Serializer serializer, Type type, ILGenerator il)
+        {
+            var valueType = type.GetGenericArguments()[0];
 
-			MethodInfo getHasValue = type.GetProperty("HasValue").GetGetMethod();
-			MethodInfo getValue = type.GetProperty("Value").GetGetMethod();
+            var noValueLabel = il.DefineLabel();
 
-			var data = serializer.GetIndirectData(valueType);
+            MethodInfo getHasValue = type.GetProperty("HasValue").GetGetMethod();
+            MethodInfo getValue = type.GetProperty("Value").GetGetMethod();
 
-			il.Emit(OpCodes.Ldarg_1);       // Stream
-			il.Emit(OpCodes.Ldarga_S, 2);   // &value
-			il.Emit(OpCodes.Call, getHasValue);
-			il.Emit(OpCodes.Call, serializer.GetDirectWriter(typeof(bool)));
+            var data = serializer.GetIndirectData(valueType);
 
-			il.Emit(OpCodes.Ldarga_S, 2);   // &value
-			il.Emit(OpCodes.Call, getHasValue);
-			il.Emit(OpCodes.Brfalse_S, noValueLabel);
+            il.Emit(OpCodes.Ldarg_1);       // Stream
+            il.Emit(OpCodes.Ldarga_S, 2);   // &value
+            il.Emit(OpCodes.Call, getHasValue);
+            il.Emit(OpCodes.Call, serializer.GetDirectWriter(typeof(bool)));
 
-			if (data.WriterNeedsInstance)
-				il.Emit(OpCodes.Ldarg_0);   // Serializer
-			il.Emit(OpCodes.Ldarg_1);       // Stream
-			il.Emit(OpCodes.Ldarga_S, 2);   // &value
-			il.Emit(OpCodes.Call, getValue);
+            il.Emit(OpCodes.Ldarga_S, 2);   // &value
+            il.Emit(OpCodes.Call, getHasValue);
+            il.Emit(OpCodes.Brfalse_S, noValueLabel);
 
-			// XXX for some reason Tailcall causes huge slowdown, at least with "decimal?"
-			//il.Emit(OpCodes.Tailcall);
-			il.Emit(OpCodes.Call, data.WriterMethodInfo);
+            if (data.WriterNeedsInstance)
+                il.Emit(OpCodes.Ldarg_0);   // Serializer
+            il.Emit(OpCodes.Ldarg_1);       // Stream
+            il.Emit(OpCodes.Ldarga_S, 2);   // &value
+            il.Emit(OpCodes.Call, getValue);
 
-			il.MarkLabel(noValueLabel);
-			il.Emit(OpCodes.Ret);
-		}
+            // XXX for some reason Tailcall causes huge slowdown, at least with "decimal?"
+            //il.Emit(OpCodes.Tailcall);
+            il.Emit(OpCodes.Call, data.WriterMethodInfo);
 
-		public void GenerateReaderMethod(Serializer serializer, Type type, ILGenerator il)
-		{
-			var valueType = type.GetGenericArguments()[0];
+            il.MarkLabel(noValueLabel);
+            il.Emit(OpCodes.Ret);
+        }
 
-			var hasValueLocal = il.DeclareLocal(typeof(bool));
-			var valueLocal = il.DeclareLocal(valueType);
+        public void GenerateReaderMethod(Serializer serializer, Type type, ILGenerator il)
+        {
+            var valueType = type.GetGenericArguments()[0];
 
-			var notNullLabel = il.DefineLabel();
+            var hasValueLocal = il.DeclareLocal(typeof(bool));
+            var valueLocal = il.DeclareLocal(valueType);
 
-			var data = serializer.GetIndirectData(valueType);
+            var notNullLabel = il.DefineLabel();
 
-			// read array len
-			il.Emit(OpCodes.Ldarg_1);                   // Stream
-			il.Emit(OpCodes.Ldloca_S, hasValueLocal);   // &hasValue
-			il.Emit(OpCodes.Call, serializer.GetDirectReader(typeof(bool)));
+            var data = serializer.GetIndirectData(valueType);
 
-			// if hasValue == 0, return null
-			il.Emit(OpCodes.Ldloc_S, hasValueLocal);
-			il.Emit(OpCodes.Brtrue_S, notNullLabel);
+            // read array len
+            il.Emit(OpCodes.Ldarg_1);                   // Stream
+            il.Emit(OpCodes.Ldloca_S, hasValueLocal);   // &hasValue
+            il.Emit(OpCodes.Call, serializer.GetDirectReader(typeof(bool)));
 
-			il.Emit(OpCodes.Ldarg_2);       // &value
-			il.Emit(OpCodes.Initobj, type);
-			il.Emit(OpCodes.Ret);
+            // if hasValue == 0, return null
+            il.Emit(OpCodes.Ldloc_S, hasValueLocal);
+            il.Emit(OpCodes.Brtrue_S, notNullLabel);
 
-			// hasValue == 1
-			il.MarkLabel(notNullLabel);
+            il.Emit(OpCodes.Ldarg_2);       // &value
+            il.Emit(OpCodes.Initobj, type);
+            il.Emit(OpCodes.Ret);
 
-			if (data.ReaderNeedsInstance)
-				il.Emit(OpCodes.Ldarg_0);   // Serializer
-			il.Emit(OpCodes.Ldarg_1);       // Stream
-			il.Emit(OpCodes.Ldloca_S, valueLocal);
-			il.Emit(OpCodes.Call, data.ReaderMethodInfo);
+            // hasValue == 1
+            il.MarkLabel(notNullLabel);
 
-			il.Emit(OpCodes.Ldarg_2);       // &value
+            if (data.ReaderNeedsInstance)
+                il.Emit(OpCodes.Ldarg_0);   // Serializer
+            il.Emit(OpCodes.Ldarg_1);       // Stream
+            il.Emit(OpCodes.Ldloca_S, valueLocal);
+            il.Emit(OpCodes.Call, data.ReaderMethodInfo);
 
-			il.Emit(OpCodes.Ldloc_S, valueLocal);
-			var constr = type.GetConstructor(new[] { valueType });
-			il.Emit(OpCodes.Newobj, constr);    // new Nullable<T>(valueLocal)
+            il.Emit(OpCodes.Ldarg_2);       // &value
 
-			il.Emit(OpCodes.Stobj, type);       // store to &value
+            il.Emit(OpCodes.Ldloc_S, valueLocal);
+            var constr = type.GetConstructor(new[] { valueType });
+            il.Emit(OpCodes.Newobj, constr);    // new Nullable<T>(valueLocal)
 
-			il.Emit(OpCodes.Ret);
-		}
-	}
+            il.Emit(OpCodes.Stobj, type);       // store to &value
+
+            il.Emit(OpCodes.Ret);
+        }
+    }
 }

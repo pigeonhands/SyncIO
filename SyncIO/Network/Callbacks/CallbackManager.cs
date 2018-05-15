@@ -1,31 +1,30 @@
-﻿using SyncIO.Server;
-using SyncIO.Transport.Packets;
-using SyncIO.Transport.Packets.Internal;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace SyncIO.Network.Callbacks
+{
+    using System;
+    using System.Collections.Generic;
 
-namespace SyncIO.Network.Callbacks {
+    using SyncIO.Transport.Packets;
+    using SyncIO.Transport.Packets.Internal;
 
     /// <summary>
     /// Threadsafe callback handler.
     /// </summary>
-    internal class CallbackManager<ClientType> where ClientType : ISyncIOClient {
-
-        private Action<ClientType, object[]> ArrayHandler;
-        private Action<ClientType, IPacket> GenericHandler;
-        private Dictionary<Type, PacketCallback<ClientType>> PacketCallbacks = new Dictionary<Type, PacketCallback<ClientType>>();
-        private object CallbackLock = new object();
+    internal class CallbackManager<ClientType> where ClientType : ISyncIOClient
+    {
+        private Action<ClientType, object[]> _arrayHandler;
+        private Action<ClientType, IPacket> _genericHandler;
+        private Dictionary<Type, PacketCallback<ClientType>> _packetCallbacks = new Dictionary<Type, PacketCallback<ClientType>>();
+        private readonly object _callbackLock = new object();
 
         /// <summary>
         /// Add handler for raw object array receve
         /// </summary>
         /// <param name="callback"></param>
-        public void SetArrayHandler(Action<ClientType, object[]> callback) {
-            lock (CallbackLock) {
-                ArrayHandler = callback;
+        public void SetArrayHandler(Action<ClientType, object[]> callback)
+        {
+            lock (_callbackLock)
+            {
+                _arrayHandler = callback;
             }
         }
 
@@ -33,11 +32,13 @@ namespace SyncIO.Network.Callbacks {
         /// Removes the handler for the specified type
         /// </summary>
         /// <typeparam name="T">type to remove the handler</typeparam>
-        public void RemoveHandler<T>() {
-            lock (CallbackLock) {
+        public void RemoveHandler<T>()
+        {
+            lock (_callbackLock)
+            {
                 var fType = typeof(T);
-                if (PacketCallbacks.ContainsKey(fType))
-                    PacketCallbacks.Remove(fType);
+                if (_packetCallbacks.ContainsKey(fType))
+                    _packetCallbacks.Remove(fType);
             }
         }
 
@@ -46,13 +47,15 @@ namespace SyncIO.Network.Callbacks {
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
-        public void SetHandler<T>(Action<ClientType, T> callback) where T : class, IPacket {
+        public void SetHandler<T>(Action<ClientType, T> callback) where T : class, IPacket
+        {
             var cb = PacketCallback<ClientType>.Create<T>(callback);
-            lock (CallbackLock) {
-                if (PacketCallbacks.ContainsKey(cb.Type))
-                    PacketCallbacks[cb.Type] = cb;
+            lock (_callbackLock)
+            {
+                if (_packetCallbacks.ContainsKey(cb.Type))
+                    _packetCallbacks[cb.Type] = cb;
                 else
-                    PacketCallbacks.Add(cb.Type, cb);
+                    _packetCallbacks.Add(cb.Type, cb);
             }
         }
 
@@ -61,34 +64,43 @@ namespace SyncIO.Network.Callbacks {
         /// If another handler is raised for the type of IPacket, this callback will not be called for it.
         /// </summary>
         /// <param name="callback"></param>
-        public void SetPacketHandler(Action<ClientType, IPacket> callback) {
-            lock (CallbackLock) {
-                GenericHandler = callback;
+        public void SetPacketHandler(Action<ClientType, IPacket> callback)
+        {
+            lock (_callbackLock)
+            {
+                _genericHandler = callback;
             }
         }
 
-        private bool RaisePacketHandler(Type packetType, ClientType client, IPacket data) {
+        private bool RaisePacketHandler(Type packetType, ClientType client, IPacket data)
+        {
             PacketCallback<ClientType> callback = null;
-            lock (CallbackLock) {
-                if (PacketCallbacks.ContainsKey(packetType))
-                    callback = PacketCallbacks[packetType];
+            lock (_callbackLock)
+            {
+                if (_packetCallbacks.ContainsKey(packetType))
+                    callback = _packetCallbacks[packetType];
             }
-            if (callback == null) {
+
+            if (callback == null)
+            {
                 return false;
-            } else {
-                callback?.Raise(client, data);
-                return true;
             }
+
+            callback?.Raise(client, data);
+            return true;
         }
 
-        public void Handle(ClientType client, IPacket data) {
-            Type packetType = data.GetType();
-
-            if (packetType == typeof(ObjectArrayPacket)) {
-                ArrayHandler?.Invoke(client, ((ObjectArrayPacket)data).Data);
-            } else {
+        public void Handle(ClientType client, IPacket data)
+        {
+            var packetType = data.GetType();
+            if (packetType == typeof(ObjectArrayPacket))
+            {
+                _arrayHandler?.Invoke(client, ((ObjectArrayPacket)data).Data);
+            }
+            else
+            {
                 if (!RaisePacketHandler(packetType, client, data))
-                    GenericHandler?.Invoke(client, data);
+                    _genericHandler?.Invoke(client, data);
             }
         }
     }
