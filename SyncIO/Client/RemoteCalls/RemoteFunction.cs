@@ -3,7 +3,6 @@
     using System;
     using System.Threading;
 
-    using SyncIO.Network;
     using SyncIO.Transport.RemoteCalls;
 
     public delegate void RemoteFunctionCallback<T>(RemoteFunction<T> function, T returnValue, Guid CallID);
@@ -24,6 +23,7 @@
         public T LastValue { get; internal set; }
 
         public event RemoteFunctionCallback<T> ReturnCallback;
+
         /// <summary>
         /// Calls function without blocking the current thread
         /// </summary>
@@ -33,23 +33,20 @@
 
         public abstract T CallWait(params object[] args);
 
-        protected void RaiseReturn(T val, Guid CallID)
+        protected void RaiseReturn(T value, Guid callID)
         {
-            LastValue = val;
-            ReturnCallback?.Invoke(this, val, CallID);
+            LastValue = value;
+            ReturnCallback?.Invoke(this, value, callID);
         }
     }
 
     internal class InternalRemoteFunction<T> : RemoteFunction<T>
     {
-
         private SyncIOClient _client;
         private readonly object _syncLock = new object();
-        private string _name;
-
+        private readonly string _name;
         private Guid _callId;
         private T _returnValue;
-
 
         public InternalRemoteFunction(SyncIOClient client, string name)
         {
@@ -62,7 +59,7 @@
             lock (_syncLock)
             {
                 if (value == null)
-                    _returnValue = default(T);
+                    _returnValue = default;
                 else
                     _returnValue = (T)value;
 
@@ -83,7 +80,6 @@
             });
             return id;
         }
-
 
         public override T CallWait(params object[] args)
         {

@@ -1,10 +1,10 @@
 ﻿namespace SyncIO.Server
 {
     using System;
+    using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net.Sockets;
-    using System.Collections;
 
     using SyncIO.Network;
     using SyncIO.Network.Callbacks;
@@ -18,11 +18,17 @@
 
     public class SyncIOServer : IEnumerable<SyncIOSocket>
     {
-        private Packager _packager;
-        private CallbackManager<SyncIOConnectedClient> _callbacks;
-        private RemoteCallServerManager _remoteFuncs;
+        #region Variables
+
+        private readonly Packager _packager;
+        private readonly CallbackManager<SyncIOConnectedClient> _callbacks;
+        private readonly RemoteCallServerManager _remoteFuncs;
         private Func<Guid> _guidGenerator = Guid.NewGuid;
         private readonly List<SyncIOSocket> _openSockets = new List<SyncIOSocket>();
+
+        #endregion
+
+        #region Properties
 
         public List<int> ListeningPorts
         {
@@ -44,7 +50,20 @@
             }
         }
 
+        #endregion
+
+        #region Events
+
         public event OnClientConnectDelegate OnClientConnect;
+
+        #endregion
+
+        #region Constructor(s)
+
+        public SyncIOServer()
+            : this(TransportProtocol.IPv4, new Packager())
+        {
+        }
 
         public SyncIOServer(TransportProtocol protocol, Packager packager)
         {
@@ -58,30 +77,24 @@
             SetHandler<RemoteCallRequest>(_remoteFuncs.HandleClientFunctionCall);
         }
 
-        public SyncIOServer() 
-            : this(TransportProtocol.IPv4, new Packager())
-        {
-        }
+        #endregion
 
         /// <summary>
         /// Listens on a new port.
         /// </summary>
         /// <param name="port">Port to listen</param>
         /// <returns>The open socket on success, else null.</returns>
-        public SyncIOSocket ListenTCP(int port)
+        public SyncIOSocket ListenTcp(int port)
         {
+            // TODO: Return base server socket instead
             var baseSock = new BaseServerSocket(Protocol);
             baseSock.OnClientConnect += TcpSock_OnClientConnect;
             if (!baseSock.BeginAccept(port))
                 return null;
 
             _openSockets.Add(baseSock);
-            baseSock.OnClose += (s, err) =>
-            {
-                _openSockets.Remove(s);
-            };
-
-            baseSock.UdpDataReceved += HandleUdpData;
+            baseSock.OnClose += (s, err) => _openSockets.Remove(s);
+            baseSock.UdpDataReceived += HandleUdpData;
 
             return baseSock;
         }
@@ -99,7 +112,7 @@
                     }
                     else
                     {
-                        ReceveHandler(client, p.Packet);
+                        ReceiveHandler(client, p.Packet);
                     }
                 }
             }
@@ -113,24 +126,25 @@
         {
             var client = new InternalSyncIOConnectedClient(s, _packager);
 
-            client.SetID(_guidGenerator());
-            client.BeginReceve(ReceveHandler);
+            client.SetIdentifier(_guidGenerator());
+            client.BeginReceive(ReceiveHandler);
             client.Send(cl =>
             {
                 Clients.Add(cl);
                 client.OnDisconnect += (c, err) => Clients.Remove(c);
 
-                OnClientConnect?.Invoke(this, cl);//Trigger event after handshake packet has been sent.
-            }, new HandshakePacket(client.ID, true));
+                // Trigger event after handshake packet has been sent.
+                OnClientConnect?.Invoke(this, cl);
+            }, new HandshakePacket(client.Id, true));
         }
 
-        private void ReceveHandler(InternalSyncIOConnectedClient client, IPacket data)
+        private void ReceiveHandler(InternalSyncIOConnectedClient client, IPacket data)
         {
             _callbacks.Handle(client, data);
         }
 
         /// <summary>
-        /// If not set, clients may receve duplicate Guids.
+        /// If not set, clients may receive duplicate Guids.
         /// </summary>
         /// <param name="_call">Call to guid generator. By default is Guid.NewGuid</param>
         public void SetGuidGenerator(Func<Guid> _call)
@@ -142,7 +156,7 @@
         }
 
         /// <summary>
-        /// Add handler for raw object array receve
+        /// Add handler for raw object array receive
         /// </summary>
         /// <param name="callback"></param>
         public void SetHandler(Action<SyncIOConnectedClient, object[]> callback)
@@ -151,7 +165,7 @@
         }
 
         /// <summary>
-        /// Add handler for IPacket type receve
+        /// Add handler for IPacket type receive
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
@@ -168,6 +182,16 @@
         public void SetHandler(Action<SyncIOConnectedClient, IPacket> callback)
         {
             _callbacks.SetPacketHandler(callback);
+        }
+
+        public void RemoveHandler<T>()
+        {
+            _callbacks.RemoveHandler<T>();
+        }
+
+        public void StartFileTransfer(string path, FileTransferType type)
+        {
+            // TODO: Implement server side handler from client Send(new StartFilePacket(path, type));
         }
 
         /// <summary>

@@ -12,11 +12,11 @@
     using SyncIO.Transport.RemoteCalls;
 
     using NetSerializer;
-
+    
     public class Packager
     {
         private readonly Serializer _nsSerializer;
-        private static RNGCryptoServiceProvider _rng = new RNGCryptoServiceProvider();
+        private static readonly RNGCryptoServiceProvider _rng = new RNGCryptoServiceProvider();
 
         #region Constructors
 
@@ -26,57 +26,67 @@
             //Used to only use the default types
         }
 
-        public Packager(Type[] ManualTypes)
+        public Packager(Type[] manualTypes)
         {
-            var AddTypes = new List<Type>(new Type[] { //For object[] sending, incase manual types do not contain these. 
-                    typeof(HandshakePacket),
-                    typeof(ObjectArrayPacket),
-                    typeof(IdentifiedPacket),
-                    typeof(UdpHandshake),
-                    typeof(RemoteFunctionInfomation),
-                    typeof(RemoteCallRequest),
-                    typeof(RemoteCallResponse),
+            var addTypes = new List<Type>(new Type[] { //For object[] sending, incase manual types do not contain these. 
+                typeof(HandshakePacket),
+                typeof(ObjectArrayPacket),
+                typeof(IdentifiedPacket),
+                typeof(UdpHandshake),
+                typeof(RemoteFunctionInfomation),
+                typeof(RemoteCallRequest),
+                typeof(RemoteCallResponse),
 
-                    typeof(Guid),
-                    typeof(Guid[]),
+                typeof(Guid),
+                typeof(Guid[]),
 
-                    typeof(byte),
-                    typeof(int),
-                    typeof(uint),
-                    typeof(short),
-                    typeof(ushort),
-                    typeof(long),
-                    typeof(ulong),
-                    typeof(float),
-                    typeof(double),
-                    typeof(char),
-                    typeof(bool),
-                    typeof(decimal),
-                    typeof(object),
-                    typeof(string),
+                typeof(byte),
+                typeof(int),
+                typeof(uint),
+                typeof(short),
+                typeof(ushort),
+                typeof(long),
+                typeof(ulong),
+                typeof(float),
+                typeof(double),
+                typeof(char),
+                typeof(bool),
+                typeof(decimal),
+                typeof(object),
+                typeof(string),
 
-                    typeof(byte[]),
-                    typeof(int[]),
-                    typeof(uint[]),
-                    typeof(short[]),
-                    typeof(ushort[]),
-                    typeof(long[]),
-                    typeof(ulong[]),
-                    typeof(float[]),
-                    typeof(double[]),
-                    typeof(char[]),
-                    typeof(bool[]),
-                    typeof(decimal[]),
-                    typeof(string[])
+                typeof(byte[]),
+                typeof(int[]),
+                typeof(uint[]),
+                typeof(short[]),
+                typeof(ushort[]),
+                typeof(long[]),
+                typeof(ulong[]),
+                typeof(float[]),
+                typeof(double[]),
+                typeof(char[]),
+                typeof(bool[]),
+                typeof(decimal[]),
+                typeof(string[])
              });
-            if (ManualTypes != null)
+            if (manualTypes != null)
             {
-                AddTypes.AddRange(ManualTypes);
+                addTypes.AddRange(manualTypes);
             }
-            _nsSerializer = new Serializer(AddTypes);
+            _nsSerializer = new Serializer(addTypes);
         }
 
         #endregion
+
+        public void AddType<T>()
+        {
+            AddType(typeof(T));
+        }
+
+        public void AddType(Type type)
+        {
+            _nsSerializer.AddTypes(new Type[] { type });
+        }
 
         /// <summary>
         /// Generates a secure, non-zero random byte array
@@ -186,10 +196,12 @@
         /// </summary>
         /// <param name="key">Must be 16 bytes long.</param>
         /// <returns></returns>
-        public ISyncIOEncryption NewRijndaelEncryption(byte[] key)
+        public static ISyncIOEncryption NewRijndaelEncryption(byte[] key)
         {
             if (key.Length != 16)
+            {
                 throw new ArgumentException("key needs to be 16 bytes long.", nameof(key));
+            }
 
             return new SyncIOEncryptionRijndael(key);
         }

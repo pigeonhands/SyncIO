@@ -9,18 +9,23 @@
 
     public class ClientManager : IEnumerable<SyncIOConnectedClient>
     {
-        private readonly Dictionary<Guid, SyncIOConnectedClient> _clientList = new Dictionary<Guid, SyncIOConnectedClient>();
-        private readonly object _syncLock = new object();
+        private readonly Dictionary<Guid, SyncIOConnectedClient> _clientList;
+        private readonly object _syncLock;
 
+        public ClientManager()
+        {
+            _clientList = new Dictionary<Guid, SyncIOConnectedClient>();
+            _syncLock = new object();
+        }
 
         internal void Add(SyncIOConnectedClient client)
         {
             lock (_syncLock)
             {
-                if (_clientList.ContainsKey(client.ID))
-                    _clientList[client.ID] = client;
+                if (_clientList.ContainsKey(client.Id))
+                    _clientList[client.Id] = client;
                 else
-                    _clientList.Add(client.ID, client);
+                    _clientList.Add(client.Id, client);
             }
         }
 
@@ -28,11 +33,10 @@
         {
             lock (_syncLock)
             {
-                if (_clientList.ContainsKey(client.ID))
-                    _clientList.Remove(client.ID);
+                if (_clientList.ContainsKey(client.Id))
+                    _clientList.Remove(client.Id);
             }
         }
-
 
         public SyncIOConnectedClient this[Guid id]
         {

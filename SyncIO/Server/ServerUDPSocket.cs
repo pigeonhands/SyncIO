@@ -10,8 +10,8 @@
     internal class ServerUdpSocket : SyncIOSocket
     {
         private Socket _networkSocket;
-        private byte[] _receiveBuffer = new byte[8192];
-        private readonly Action<byte[]> _udpDataReceved;
+        private readonly byte[] _receiveBuffer = new byte[8192];
+        private readonly Action<byte[]> _udpDataReceived;
 
         public TransportProtocol Protocol { get; private set; }
 
@@ -23,7 +23,7 @@
         public ServerUdpSocket(TransportProtocol protocol, Action<byte[]> callback)
         {
             Protocol = protocol;
-            _udpDataReceved = callback;
+            _udpDataReceived = callback;
         }
 
         private void NewSocket()
@@ -43,7 +43,7 @@
 
             Buffer.BlockCopy(_receiveBuffer, 0, packet, 0, packet.Length);
 
-            _udpDataReceved?.Invoke(packet);
+            _udpDataReceived?.Invoke(packet);
 
             _networkSocket.BeginReceiveFrom(_receiveBuffer, 0, _receiveBuffer.Length, SocketFlags.None, ref clientEP, InternalReceive, null);
         }
@@ -53,7 +53,7 @@
         /// </summary>
         /// <param name="ep"></param>
         /// <returns></returns>
-        public bool TryReceve(IPEndPoint ep)
+        public bool TryReceive(IPEndPoint ep)
         {
             NewSocket();
             try

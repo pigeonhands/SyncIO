@@ -1,7 +1,5 @@
 ﻿namespace SyncIO.Transport.Encryption.Defaults
 {
-
-
     public class SyncIOEncryptionXor : ISyncIOEncryption
     {
         private readonly byte[] _key;

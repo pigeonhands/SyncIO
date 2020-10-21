@@ -5,26 +5,26 @@
 
     public class SyncIOEncryptionRijndael : ISyncIOEncryption
     {
-        private readonly Rijndael _rijObj;
+        private readonly Rijndael _rijndael;
         private readonly ICryptoTransform _encryptor;
         private readonly ICryptoTransform _decryptor;
 
         public SyncIOEncryptionRijndael(byte[] key)
         {
-            _rijObj = new RijndaelManaged
+            _rijndael = new RijndaelManaged
             {
                 Key = key,
                 IV = key
             };
-            _encryptor = _rijObj.CreateEncryptor();
-            _decryptor = _rijObj.CreateDecryptor();
+            _encryptor = _rijndael.CreateEncryptor();
+            _decryptor = _rijndael.CreateDecryptor();
         }
 
         public SyncIOEncryptionRijndael(Rijndael rijObject)
         {
-            _rijObj = rijObject;
-            _encryptor = _rijObj.CreateEncryptor();
-            _decryptor = _rijObj.CreateDecryptor();
+            _rijndael = rijObject;
+            _encryptor = _rijndael.CreateEncryptor();
+            _decryptor = _rijndael.CreateDecryptor();
         }
 
         public byte[] Decrypt(byte[] data)
@@ -41,7 +41,7 @@
         {
             _encryptor.Dispose();
             _decryptor.Dispose();
-            _rijObj.Dispose();
+            _rijndael.Dispose();
         }
     }
 }

@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\SharedCode\Packets\ChatPacket.cs" Link="Packets\ChatPacket.cs" />
+    <Compile Include="..\SharedCode\Packets\StartChatPacket.cs" Link="Packets\StartChatPacket.cs" />
+    <Compile Include="..\SharedCode\Packets\StopChatPacket.cs" Link="Packets\StopChatPacket.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Packets\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\SyncIO\SyncIO.csproj" />
+    <ProjectReference Include="..\..\ISyncIOClientPlugin\ISyncIOClientPlugin.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="ChatForm.Designer.cs">
+      <DependentUpon>ChatForm.cs</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+</Project>

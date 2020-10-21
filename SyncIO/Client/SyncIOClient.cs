@@ -14,6 +14,7 @@
     using SyncIO.Transport.Compression;
     using SyncIO.Transport.Encryption;
     using SyncIO.Transport.RemoteCalls;
+    using System.Collections.Generic;
 
     public delegate void OnHandshakeDelegate(SyncIOClient sender, Guid id, bool success);
     public delegate void OnDisconnectDelegate(SyncIOClient sender, Exception ex);
@@ -38,11 +39,13 @@
         /// <summary>
         /// Id of client supplied by server.
         /// </summary>
-        public Guid ID => _connection?.ID ?? Guid.Empty;
+        public Guid Id => _connection?.Id ?? Guid.Empty;
 
         public TransportProtocol Protocol { get; }
 
-        public bool Connected => ID != Guid.Empty;
+        public bool Connected => Id != Guid.Empty;
+
+        public IDictionary<Guid, TransferQueue> Transfers { get; }
 
         #endregion
 
@@ -55,30 +58,32 @@
 
         #region Constructor(s)
 
+        public SyncIOClient()
+            : this(TransportProtocol.IPv4, new Packager())
+        {
+        }
+
         public SyncIOClient(TransportProtocol protocol, Packager packager)
         {
             Protocol = protocol;
             _packager = packager;
             _callbacks = new CallbackManager<SyncIOClient>();
             _remoteFunctions = new RemoteFunctionManager();
+            Transfers = new Dictionary<Guid, TransferQueue>();
 
             _callbacks.SetHandler<HandshakePacket>((c, p) =>
             {
                 _handshakeComplete = p.Success;
-                _connection.SetID(p.Id);
+                _connection.SetIdentifier(p.Id);
+                // TODO: Environment.MachineName
                 _handshakeEvent?.Set();
                 _handshakeEvent?.Dispose();
                 _handshakeEvent = null;
-                OnHandshake?.Invoke(this, ID, _handshakeComplete);
+                OnHandshake?.Invoke(this, Id, _handshakeComplete);
                 _callbacks.RemoveHandler<HandshakePacket>();
             });
 
             _callbacks.SetHandler<RemoteCallResponse>((c, p) => _remoteFunctions.RaiseFunction(p));
-        }
-
-        public SyncIOClient() 
-            : this(TransportProtocol.IPv4, new Packager())
-        {
         }
 
         #endregion
@@ -90,15 +95,14 @@
         /// Sending will fail untill handshake is completed.
         /// Bind to OnHandshake event for notify.
         /// </summary>
-        /// <param name="host">IP address</param>
-        /// <param name="port">Port</param>
+        /// <param name="endPoint"></param>
         /// <returns></returns>
-        public bool Connect(string host, int port)
+        public bool Connect(EndPoint endPoint)
         {
             var sock = NewSocket();
             try
             {
-                sock.Connect(host, port);
+                sock.Connect(endPoint);
                 SetupConnection(sock);
                 return true;
             }
@@ -110,7 +114,71 @@
         }
 
         /// <summary>
-        /// Add handler for raw object array receve
+        /// Establishes a TCP connection to a SyncIOServer.
+        /// Sending will fail untill handshake is completed.
+        /// Bind to OnHandshake event for notify.
+        /// </summary>
+        /// <param name="hostOrIPAddress">Host name or IP address</param>
+        /// <param name="port">Connection port</param>
+        /// <returns></returns>
+        public bool ConnectAsync(string hostOrIPAddress, ushort port)
+        {            
+            var sock = NewSocket();
+            try
+            {
+                if (IPAddress.TryParse(hostOrIPAddress, out IPAddress ip))
+                {
+                    Connect(ip, port);
+                    return true;
+                }
+
+                /*var result =*/ Dns.BeginGetHostEntry(hostOrIPAddress, EndGetHostEntry, port);
+                //while (!result.IsCompleted)
+                //    Thread.Sleep(10);
+
+                //return result.IsCompleted;
+                return true;
+            }
+            catch
+            {
+                _connection = null;
+                return false;
+            }
+        }
+
+        private void Connect(IPAddress ip, ushort port)
+        {
+            var sock = NewSocket();
+            sock.Connect(ip, port);
+            SetupConnection(sock);
+        }
+
+        private void EndGetHostEntry(IAsyncResult ar)
+        {
+            try
+            {
+                var hosts = Dns.EndGetHostEntry(ar);
+                foreach (var ip in hosts.AddressList)
+                {
+                    if (ip.AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        var port = (ushort)ar.AsyncState;
+                        Connect(ip, port);
+                        break;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                //OnExceptionThrown(ex, "EndGetHostEntry");
+                ////Disconnect();
+                //Reconnect();
+            }
+        }
+
+        /// <summary>
+        /// Add handler for raw object array receive
         /// </summary>
         /// <param name="callback"></param>
         public void SetHandler(Action<SyncIOClient, object[]> callback)
@@ -119,7 +187,7 @@
         }
 
         /// <summary>
-        /// Add handler for IPacket type receve
+        /// Add handler for IPacket type receive
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
@@ -136,6 +204,16 @@
         public void SetHandler(Action<SyncIOClient, IPacket> callback)
         {
             _callbacks.SetPacketHandler(callback);
+        }
+
+        public void RemoveHandler<T>()
+        {
+            _callbacks.RemoveHandler<T>();
+        }
+
+        public void StartFileTransfer(string path, FileTransferType type)
+        {
+            Send(new StartFilePacket(path, type));
         }
 
         public void Send(Action<SyncIOConnectedClient> afterSend, params object[] data)
@@ -196,6 +274,10 @@
             _connection.PackagingConfiguration.Encryption = encryption;
         }
 
+        /// <summary>
+        /// Sets the compression for traffic.
+        /// </summary>
+        /// <param name="compression">Compression to use.</param>
         public void SetCompression(ISyncIOCompression compression)
         {
             if (_connection == null)
@@ -224,21 +306,20 @@
         /// <summary>
         /// Should be used to RE-CONFIRM udp connection. 
         /// Will throw an exception if TryOpenUDPConnection is not called first.
-        /// HasUDP will also be set to FALSE after this call untill confirmation is receved from server.
+        /// HasUDP will also be set to FALSE after this call until confirmation is received from server.
         /// </summary>
-        public void SendUDPHandshake()
+        public void SendUdpHandshake()
         {
-            //Send handshake packet regardless if alredy confirmed
+            // Send handshake packet regardless if alredy confirmed
             HasUDP = false;
             _udpClient.Send(new UdpHandshake());
         }
-
 
         /// <summary>
         /// Blocks and waits for UDP.
         /// </summary>
         /// <returns></returns>
-        public bool WaitForUDP()
+        public bool WaitForUdp()
         {
             if (_udpClient == null)
                 return false;
@@ -251,7 +332,7 @@
             return HasUDP;
         }
 
-        public override SyncIOSocket TryOpenUDPConnection()
+        public override SyncIOSocket TryOpenUdpConnection()
         {
             if (!Connected)
                 throw new Exception("Must be connecteded and hanshake must be completed before opening UDP connection.");
@@ -273,7 +354,7 @@
                 _handshakeEvent = null;
             });
 
-            SendUDPHandshake();
+            SendUdpHandshake();
             return this;
         }
 
@@ -306,7 +387,7 @@
             EndPoint = ((IPEndPoint)s.RemoteEndPoint);
             _connection = new InternalSyncIOConnectedClient(s, _packager);
 
-            _connection.BeginReceve(ReceveHandler);
+            _connection.BeginReceive(ReceiveHandler);
             _connection.OnDisconnect += Connection_OnDisconnect;
         }
 
@@ -315,7 +396,7 @@
             OnDisconnect?.Invoke(this, ex);
         }
 
-        private void ReceveHandler(InternalSyncIOConnectedClient client, IPacket data)
+        private void ReceiveHandler(InternalSyncIOConnectedClient client, IPacket data)
         {
             _callbacks.Handle(this, data);
         }

@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SyncIO.Common</RootNamespace>
     <AssemblyName>SyncIO.Common</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,11 +36,13 @@
     <Reference Include="System.Drawing" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Packets\ChatMessage.cs" />
+    <Compile Include="FileTransferType.cs" />
+    <Compile Include="OsPlatform.cs" />
+    <Compile Include="Packets\AuthPacket.cs" />
+    <Compile Include="Packets\ClientOptionPacket.cs" />
     <Compile Include="Packets\ConnectedChatClient.cs" />
-    <Compile Include="Packets\DesktopScreenshot.cs" />
-    <Compile Include="Packets\FilePacket.cs" />
-    <Compile Include="Packets\ClientInfo.cs" />
+    <Compile Include="Packets\ClientInfoPacket.cs" />
+    <Compile Include="Packets\PingPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -48,5 +51,6 @@
       <Name>SyncIO</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

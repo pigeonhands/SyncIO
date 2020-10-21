@@ -5,14 +5,14 @@
 
     public class SyncIOEncryptionRSA : ISyncIOEncryption
     {
-        private readonly RSACryptoServiceProvider _rsaObj;
+        private readonly RSACryptoServiceProvider _rsa;
 
         public byte[] PublicKey { get; }
 
         public SyncIOEncryptionRSA()
         {
-            _rsaObj = new RSACryptoServiceProvider();
-            PublicKey = _rsaObj.ExportCspBlob(false);
+            _rsa = new RSACryptoServiceProvider();
+            PublicKey = _rsa.ExportCspBlob(false);
         }
 
         /// <summary>
@@ -21,23 +21,23 @@
         /// <param name="publicKey">Pubic key for encryption</param>
         public SyncIOEncryptionRSA(byte[] publicKey)
         {
-            _rsaObj = new RSACryptoServiceProvider();
-            _rsaObj.ImportCspBlob(publicKey);
+            _rsa = new RSACryptoServiceProvider();
+            _rsa.ImportCspBlob(publicKey);
         }
 
         public byte[] Encrypt(byte[] data)
         {
-            return _rsaObj.Encrypt(data, false);
+            return _rsa.Encrypt(data, false);
         }
 
         public byte[] Decrypt(byte[] data)
         {
-            return _rsaObj.Decrypt(data, false);
+            return _rsa.Decrypt(data, false);
         }
 
         public void Dispose()
         {
-            _rsaObj.Dispose();
+            _rsa.Dispose();
         }
     }
 }

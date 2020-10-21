@@ -7,7 +7,7 @@
     [Serializable]
     internal class RemoteCallResponse : IPacket
     {
-        public string Name { get; set; } //replace names with IDs
+        public string Name { get; set; } // Replace names with IDs
 
         public FunctionResponseStatus Response { get; set; }
 

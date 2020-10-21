@@ -22,7 +22,7 @@
         public bool Binded => (_networkSocket?.IsBound ?? false) && _successfulBind;
 
         public event Action<BaseServerSocket, Socket> OnClientConnect;
-        public event Action<byte[]> UdpDataReceved;
+        public event Action<byte[]> UdpDataReceived;
 
         public BaseServerSocket()
             : this(TransportProtocol.IPv4)
@@ -103,11 +103,11 @@
             }
         }
 
-        public override SyncIOSocket TryOpenUDPConnection()
+        public override SyncIOSocket TryOpenUdpConnection()
         {
             _udpSock?.Dispose();
-            _udpSock = new ServerUdpSocket(Protocol, UdpDataReceved);
-            HasUDP = _udpSock.TryReceve(EndPoint);
+            _udpSock = new ServerUdpSocket(Protocol, UdpDataReceived);
+            HasUDP = _udpSock.TryReceive(EndPoint);
 
             return this;
         }

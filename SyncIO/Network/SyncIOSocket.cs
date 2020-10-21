@@ -3,6 +3,7 @@
     using System;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.InteropServices;
 
     public delegate void OnSyncIOSocketClose(SyncIOSocket sender, Exception e);
 
@@ -35,7 +36,7 @@
         /// Server - Opens oprt for UDP traffic
         /// </summary>
         /// <returns>Self for chaining</returns>
-        public virtual SyncIOSocket TryOpenUDPConnection()
+        public virtual SyncIOSocket TryOpenUdpConnection()
         {
             return this;
         }
@@ -52,7 +53,10 @@
 
         protected void SetTcpKeepAlive(Socket socket)
         {
-            socket?.IOControl(IOControlCode.KeepAliveValues, _socketOptions, null);
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                socket?.IOControl(IOControlCode.KeepAliveValues, _socketOptions, null);
+            }
         }
 
         public override string ToString()

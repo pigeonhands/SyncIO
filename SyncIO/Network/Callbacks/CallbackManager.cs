@@ -9,15 +9,21 @@
     /// <summary>
     /// Threadsafe callback handler.
     /// </summary>
-    internal class CallbackManager<ClientType> where ClientType : ISyncIOClient
+    public class CallbackManager<ClientType> where ClientType : ISyncIOClient
     {
         private Action<ClientType, object[]> _arrayHandler;
         private Action<ClientType, IPacket> _genericHandler;
-        private Dictionary<Type, PacketCallback<ClientType>> _packetCallbacks = new Dictionary<Type, PacketCallback<ClientType>>();
-        private readonly object _callbackLock = new object();
+        private readonly Dictionary<Type, PacketCallback<ClientType>> _packetCallbacks;
+        private readonly object _callbackLock;
+
+        public CallbackManager()
+        {
+            _packetCallbacks = new Dictionary<Type, PacketCallback<ClientType>>();
+            _callbackLock = new object();
+        }
 
         /// <summary>
-        /// Add handler for raw object array receve
+        /// Add handler for raw object array receive
         /// </summary>
         /// <param name="callback"></param>
         public void SetArrayHandler(Action<ClientType, object[]> callback)
@@ -38,12 +44,14 @@
             {
                 var fType = typeof(T);
                 if (_packetCallbacks.ContainsKey(fType))
+                {
                     _packetCallbacks.Remove(fType);
+                }
             }
         }
 
         /// <summary>
-        /// Add handler for IPacket type receve
+        /// Add handler for IPacket type receive
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="callback"></param>
@@ -78,7 +86,9 @@
             lock (_callbackLock)
             {
                 if (_packetCallbacks.ContainsKey(packetType))
+                {
                     callback = _packetCallbacks[packetType];
+                }
             }
 
             if (callback == null)
@@ -100,7 +110,9 @@
             else
             {
                 if (!RaisePacketHandler(packetType, client, data))
+                {
                     _genericHandler?.Invoke(client, data);
+                }
             }
         }
     }

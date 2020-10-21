@@ -33,9 +33,7 @@
         public InnerPacketCallback(Action<ST, RT> cb)
         {
             _callback = cb;
-#pragma warning disable RECS0021 // Warns about calls to virtual member functions occuring in the constructor
             Type = typeof(RT);
-#pragma warning restore RECS0021 // Warns about calls to virtual member functions occuring in the constructor
         }
 
         public override void Raise(ST t, IPacket packet)

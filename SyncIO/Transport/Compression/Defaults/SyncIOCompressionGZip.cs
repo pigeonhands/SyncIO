@@ -15,7 +15,7 @@
                     gzip.Write(data, 0, data.Length);
                 }
 
-                Console.WriteLine($"Original size: {data.Length.ToString("N0")}, Compressed size: {ms.Length.ToString("N0")}");
+                Console.WriteLine($"Original size: {data.Length:N0}, Compressed size: {ms.Length:N0}");
                 return ms.ToArray();
             }
         }
@@ -41,7 +41,7 @@
                     }
                     while (count > 0);
 
-                    Console.WriteLine($"Compressed size {data.Length.ToString("N0")}, decompressed size {ms.Length.ToString("N0")}.");
+                    Console.WriteLine($"Compressed size {data.Length:N0}, decompressed size {ms.Length:N0}.");
                     return ms.ToArray();
                 }
             }

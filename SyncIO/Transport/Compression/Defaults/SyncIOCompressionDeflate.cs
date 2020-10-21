@@ -13,7 +13,7 @@
             {
                 using (var outStream = new MemoryStream())
                 {
-                    using (DeflateStream deflate = new DeflateStream(outStream, CompressionMode.Compress))
+                    using (var deflate = new DeflateStream(outStream, CompressionMode.Compress))
                     {
                         // Copy the source file into the compression stream.
                         const int size = 4096;
@@ -51,7 +51,6 @@
                         }
                         Console.WriteLine("Decompressed from {0} to {1} bytes", data.Length, outStream.Length);
                     }
-
                     return outStream.ToArray();
                 }
             }

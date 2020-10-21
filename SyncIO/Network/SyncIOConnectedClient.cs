@@ -25,24 +25,31 @@
         /// <summary>
         /// Id of connected client.
         /// </summary>
-        public Guid ID { get; protected set; }
+        public Guid Id { get; protected set; }
 
         /// <summary>
-        /// General tag data
-        /// not used internaly by SyncIO.
+        /// General tag data not used internaly by SyncIO.
         /// </summary>
         public object Tag { get; set; }
 
         /// <summary>
         /// Remote EndPoint of client
         /// </summary>
-        public IPEndPoint EndPoint => (IPEndPoint)NetworkSocket.RemoteEndPoint;
+        public IPEndPoint EndPoint => (IPEndPoint)NetworkSocket?.RemoteEndPoint;
+
+        /// <summary>
+        /// All client file transfers
+        /// </summary>
+        public IDictionary<Guid, TransferQueue> Transfers { get; } = new Dictionary<Guid, TransferQueue>();
 
         /// <summary>
         /// Underlying socket connection for the client
         /// </summary>
         protected Socket NetworkSocket { get; set; }
 
+        /// <summary>
+        /// Packet packaging configuration i.e. set encryption, compression options, etc
+        /// </summary>
         internal PackConfig PackagingConfiguration { get; set; }
 
 
@@ -76,22 +83,30 @@
         }
 
         /// <summary>
-        /// Sets the encryption for traffic.
+        /// Sets the encryption for incoming and outgoing network traffic.
         /// </summary>
-        /// <param name="encryption">Encryption to use.</param>
+        /// <param name="encryption">Encryption type to use.</param>
         public void SetEncryption(ISyncIOEncryption encryption)
         {
             if (PackagingConfiguration == null)
+            {
                 PackagingConfiguration = new PackConfig();
-
+            }
             PackagingConfiguration.Encryption = encryption;
         }
 
+        /// <summary>
+        /// Sets the compression for incoming and outgoing network traffic.
+        /// Warning: Enabling compression will make smaller packets slightly
+        /// bigger, although larger packets will reduce in size.
+        /// </summary>
+        /// <param name="compression">Compress type to use.</param>
         public void SetCompression(ISyncIOCompression compression)
         {
             if (PackagingConfiguration == null)
+            {
                 PackagingConfiguration = new PackConfig();
-
+            }
             PackagingConfiguration.Compression = compression;
         }
     }
@@ -101,26 +116,34 @@
     /// </summary>
     internal class InternalSyncIOConnectedClient : SyncIOConnectedClient
     {
+        #region Variables
+
         /// <summary>
         /// Multithread sync object
         /// </summary>
-        private readonly object SyncLock = new object();
+        private readonly object _syncLock = new object();
 
         /// <summary>
         /// Send queue for client
         /// </summary>
-        private Queue<QueuedPacket> SendQueue = new Queue<QueuedPacket>();
+        private readonly Queue<QueuedPacket> _sendQueue = new Queue<QueuedPacket>();
 
         /// <summary>
         /// Used to handle receving of data.
         /// </summary>
-        private PacketDefragmenter Defragger;
+        private readonly PacketDefragmenter _defragger;
 
+        private Action<InternalSyncIOConnectedClient, IPacket> _receiveCallback;
 
-        private Action<InternalSyncIOConnectedClient, IPacket> ReceveCallback;
+        #endregion
+
+        #region Properties
 
         public Packager Packager { get; }
 
+        #endregion
+
+        #region Constructor(s)
 
         public InternalSyncIOConnectedClient(Socket s, Packager p) 
             : this(s, p, 1024 * 5)
@@ -131,8 +154,12 @@
         {
             NetworkSocket = s ?? throw new Exception("Socket not valid.");
             Packager = p;
-            Defragger = new PacketDefragmenter(bufferSize);
+            _defragger = new PacketDefragmenter(bufferSize);
         }
+
+        #endregion
+
+        #region Public Methods
 
         public override void Send(Action<SyncIOConnectedClient> afterSend, params object[] data)
         {
@@ -146,16 +173,26 @@
             HandleRawBytes(data, afterSend);
         }
 
+        public void SetIdentifier(Guid id)
+        {
+            Id = id;
+        }
+
+        #endregion
+
+        #region Send
+
         /// <summary>
-        /// Assigns a prefix to the data and adds ti to the send queue.
+        /// Assigns a prefix to the data and adds it to the send queue.
         /// </summary>
         /// <param name="data">Data to send</param>
         private void HandleRawBytes(byte[] data, Action<SyncIOConnectedClient> afterSend)
         {
-            var packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();//Appending length prefix to packet
-            lock (SyncLock)
+            // Appending length prefix to packet
+            var packet = BitConverter.GetBytes(data.Length).Concat(data).ToArray();
+            lock (_syncLock)
             {
-                SendQueue.Enqueue(new QueuedPacket(packet, afterSend));
+                _sendQueue.Enqueue(new QueuedPacket(packet, afterSend));
                 Task.Factory.StartNew(HandleSendQueue);
             }
         }
@@ -164,18 +201,16 @@
         {
             QueuedPacket packet = null;
 
-            lock (SyncLock)
+            lock (_syncLock)
             {
-                packet = SendQueue.Dequeue();
+                packet = _sendQueue.Dequeue();
             }
 
             if (packet != null && packet.Data != null)
             {
-                var se = SocketError.SocketError;
-
-                NetworkSocket?.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out se);
-
-                if (se != SocketError.Success)
+                var socketError = SocketError.SocketError;
+                NetworkSocket?.Send(packet.Data, 0, packet.Data.Length, SocketFlags.None, out socketError);
+                if (socketError != SocketError.Success)
                 {
                     Disconnect(new SocketException());
                     return;
@@ -187,42 +222,53 @@
             }
         }
 
-        public void BeginReceve(Action<InternalSyncIOConnectedClient, IPacket> callback)
+        #endregion
+
+        #region Receive
+
+        public void BeginReceive(Action<InternalSyncIOConnectedClient, IPacket> callback)
         {
-
-            if (ReceveCallback != null)
+            if (_receiveCallback != null)
+            {
                 throw new Exception("Alredy listening.");
+            }
 
-            ReceveCallback = callback;
-            if (ReceveCallback == null)
+            _receiveCallback = callback;
+            if (_receiveCallback == null)
+            {
                 throw new Exception("Invalid callback");
+            }
 
             ReceiveWithDefragger();
         }
 
         /// <summary>
-        /// Uses defagger to receve packets.
+        /// Uses defagger to receive packets.
         /// </summary>
         private void ReceiveWithDefragger()
         {
-            NetworkSocket.BeginReceive(Defragger.ReceveBuffer, Defragger.BufferIndex, Defragger.BytesToReceve, SocketFlags.None, out SocketError SE, InternalReceve, null);
+            NetworkSocket.BeginReceive(_defragger.ReceiveBuffer, _defragger.BufferIndex, _defragger.BytesToReceive, SocketFlags.None, out SocketError socketError, InternalReceive, null);
 
-            if (SE != SocketError.Success)
+            if (socketError != SocketError.Success &&
+                socketError != SocketError.IOPending)
+            {
                 Disconnect(new SocketException());
+            }
         }
 
-        private void InternalReceve(IAsyncResult at)
+        private void InternalReceive(IAsyncResult at)
         {
-            var se = SocketError.SocketError;
-            var bytes = NetworkSocket?.EndReceive(at, out se) ?? 0;
+            var socketError = SocketError.SocketError;
+            var bytes = NetworkSocket?.EndReceive(at, out socketError) ?? 0;
 
-            if (se != SocketError.Success)
+            if (socketError != SocketError.Success)
             {
+                // Client force closed connection
                 Disconnect(new SocketException());
                 return;
             }
 
-            var packet = Defragger.Process(bytes);
+            var packet = _defragger.Process(bytes);
 
             ReceiveWithDefragger();
 
@@ -231,7 +277,7 @@
                 try
                 {
                     var pack = Packager.Unpack(packet, PackagingConfiguration);
-                    ReceveCallback(this, pack);
+                    _receiveCallback(this, pack);
                 }
                 catch (Exception ex)
                 {
@@ -241,9 +287,6 @@
             }
         }
 
-        public void SetID(Guid id)
-        {
-            ID = id;
-        }
+        #endregion
     }
 }

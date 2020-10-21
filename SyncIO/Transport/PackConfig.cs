@@ -26,10 +26,14 @@
         public byte[] PostPacking(byte[] data)
         {
             if (Compression != null)
+            {
                 data = Compression.Compress(data);
+            }
 
             if (Encryption != null)
+            {
                 data = Encryption.Encrypt(data);
+            }
 
             return data;
         }
@@ -40,10 +44,14 @@
         public byte[] PreUnpacking(byte[] data)
         {
             if (Encryption != null)
+            {
                 data = Encryption.Decrypt(data);
+            }
 
             if (Compression != null)
+            {
                 data = Compression.Decompress(data);
+            }
 
             return data;
         }

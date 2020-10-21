@@ -2,8 +2,11 @@
 {
     using System;
 
+    /// <summary>
+    /// Primarily for UDP
+    /// </summary>
     [Serializable]
-    internal class IdentifiedPacket : IPacket //Primaraly for UDP
+    internal class IdentifiedPacket : IPacket
     {
         public Guid Id { get; set; }
 
